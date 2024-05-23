@@ -227,7 +227,7 @@ def gpt_request(project_id, message_id, chat_id, gpt_model_id):
         description=project.description,
         price=project.price,
         price_max=project.price_max,
-    ) + prompt.json_format
+    ) + "\n" + str(prompt.json_format)
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
