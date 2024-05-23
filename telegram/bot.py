@@ -71,16 +71,16 @@ async def get_close_keyboard():
 
 async def get_menu_keyboard():
     buttons = [[types.InlineKeyboardButton(
-        text="👤Редактировать профиль",
+        text="👤 Редактировать профиль",
         callback_data="profile",
     )], [types.InlineKeyboardButton(
-        text="📝Редактировать категории",
+        text="📝 Редактировать категории",
         callback_data="categories",
     )], [types.InlineKeyboardButton(
-        text="😎Моя подписка",
-        callback_data="subscribe",
+        text="❤️Поддержать проект",
+        callback_data="donate",
     )], [types.InlineKeyboardButton(
-        text="❌Закрыть",
+        text="❌ Закрыть",
         callback_data="close",
     )]]
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -93,7 +93,7 @@ async def get_change_profile_keyboard():
         [types.InlineKeyboardButton(text="📝 О себе", callback_data="change_summary")],
         [types.InlineKeyboardButton(text="💼 Опыт", callback_data="change_experience")],
         [types.InlineKeyboardButton(text="⏰ Ставка в час", callback_data="change_hourly_rate")],
-        [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_subscription")],
+        # [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_subscription")],
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back")]
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -180,7 +180,7 @@ async def get_profile_data(message):
         f"📝 *О себе:* {profile['summary'] or 'Не указано'}\n\n"
         f"💼 *Опыт:* {profile['experience'] or 'Не указано'}\n\n"
         f"⏰ *Ставка в час:* {profile['hourly_rate'] or 'Не указано'}\n\n"
-        f"🔔 *Подписка:* {profile['user_subscription'] or 'Отсутствует'}\n\n"
+        # f"🔔 *Подписка:* {profile['user_subscription'] or 'Отсутствует'}\n\n"
         f"*Выберите поле для редактирования:*"
     )
     return profile_text

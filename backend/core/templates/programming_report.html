@@ -110,20 +110,6 @@
     <div class="subheading">Отклик:</div>
     <div class="response-container">
         <div id="responseText">{{ response.response }}</div>
-        <div class="copy-button-container">
-            <button class="copy-button" onclick="copyResponse()">Скопировать отклик</button>
-        </div>
     </div>
-
-    <script>
-        function copyResponse() {
-            var responseText = document.getElementById("responseText").innerText;
-            navigator.clipboard.writeText(responseText).then(function() {
-                alert("Отклик скопирован в буфер обмена!");
-            }, function() {
-                alert("Ошибка при копировании отклика.");
-            });
-        }
-    </script>
 </body>
 </html>

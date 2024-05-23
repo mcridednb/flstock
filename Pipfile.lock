@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "6fac4f3d9b5d1c1549ac403c7092e65eb0488194ccb761e1d73949be6933b7db"
+            "sha256": "178d08f632d2e82a8f03c1a4714686377a96807b0b0bc2dc68ce5c820bf1d742"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -664,6 +664,14 @@
             "index": "pypi",
             "markers": "python_version >= '3.10'",
             "version": "==5.0.6"
+        },
+        "django-jsoneditor": {
+            "hashes": [
+                "sha256:1d3dfca28f047feefa6ebc6f9541179eb815fb459b006faf3fb8d0fb2197d2df",
+                "sha256:d7a639a7251e376126b5be64ea588c925c7a40d45e0e212f66ef475d2f0f90bb"
+            ],
+            "index": "pypi",
+            "version": "==0.2.4"
         },
         "djangorestframework": {
             "hashes": [
@@ -1728,6 +1736,15 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==0.12.1"
+        },
+        "pdfkit": {
+            "hashes": [
+                "sha256:992f821e1e18fc8a0e701ecae24b51a2d598296a180caee0a24c0af181da02a9",
+                "sha256:a7a4ca0d978e44fa8310c4909f087052430a6e8e0b1dd7ceef657f139789f96f",
+                "sha256:cc122e5aed594198ff7aaa566f2950d2163763576ab891c161bb1f6c630f5a8e"
+            ],
+            "index": "pypi",
+            "version": "==1.0.0"
         },
         "pendulum": {
             "hashes": [

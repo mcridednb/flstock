@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "core",
+
     "drf_yasg",
+    "jsoneditor",
 ]
 
 MIDDLEWARE = [
@@ -195,3 +197,7 @@ logger.add(
     compression="zip",
     enqueue=True,
 )
+
+# JSONEditor
+JSON_EDITOR_JS = 'https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/8.6.4/jsoneditor.js'
+JSON_EDITOR_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/8.6.4/jsoneditor.css'

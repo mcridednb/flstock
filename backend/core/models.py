@@ -110,6 +110,7 @@ class GPTPrompt(models.Model):
     model = models.ForeignKey(GPTModel, on_delete=models.PROTECT, related_name="prompts")
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
     text = models.TextField()
+    json_format = models.JSONField()
 
     class Meta:
         unique_together = ("model", "category")

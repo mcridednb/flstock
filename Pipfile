@@ -25,6 +25,8 @@ redis = "*"
 gunicorn = "*"
 certifi = "*"
 pendulum = "==2.1.2"
+django-jsoneditor = "*"
+pdfkit = "*"
 
 [dev-packages]
 

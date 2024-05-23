@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db.models.fields.json import JSONField
+from jsoneditor.forms import JSONEditor
 
 from core.models import (
     Subscription, TelegramUser, Project, Category, Subcategory, CategorySubscription,
@@ -47,7 +49,17 @@ class GPTModelAdmin(admin.ModelAdmin):
 
 @admin.register(GPTPrompt)
 class GPTPromptAdmin(admin.ModelAdmin):
-    pass
+    formfield_overrides = {
+        JSONField: {
+            "widget": JSONEditor(
+                init_options={"mode": "code", "modes": ["code", "tree"]},
+                ace_options={"readOnly": False},
+            )
+        }
+    }
+    # formfield_overrides = {
+    #     JSONField: {'widget': JSONEditor},
+    # }
 
 
 class SubscriptionGPTLimitsAdmin(admin.TabularInline):

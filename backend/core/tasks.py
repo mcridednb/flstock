@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 
 import html2text
+import pdfkit
 import pytz
 import redis
 import requests
@@ -14,24 +15,28 @@ from loguru import logger
 from openai import OpenAI
 
 from backend.celery import app
-from core.models import Project, CategorySubscription, TelegramUser, Source, GPTModel
+from core.models import Project, CategorySubscription, TelegramUser, Source, GPTPrompt
 
 
-def create_html_file(response):
-    html_content = render_to_string('report.html', {'response': response})
-    buffer = io.BytesIO(html_content.encode('utf-8'))
+def create_pdf_file(response, template_name):
+    html_content = render_to_string(template_name, {'response': response})
+    options = {
+        'encoding': 'UTF-8'
+    }
+    pdf_buffer = pdfkit.from_string(html_content, False, options=options)
+    buffer = io.BytesIO(pdf_buffer)
     buffer.seek(0)
     return buffer
 
 
-def send_html_to_telegram(chat_id, message_id, response):
-    html_buffer = create_html_file(response)
+def send_html_to_telegram(chat_id, message_id, response, template_name):
+    pdf_buffer = create_pdf_file(response, template_name)
     files = {
-        'document': (f'report.html', html_buffer, 'text/html')
+        'document': (f'report.pdf', pdf_buffer, 'application/pdf')
     }
     data = {
         'chat_id': chat_id,
-        'caption': 'Анализ заказа',
+        'text': response["response"],
         'parse_mode': 'Markdown',
         'reply_to_message_id': message_id,
     }
@@ -141,24 +146,35 @@ def send_project_task(project_id):
         f"{price_text}"
         f"🌐 *Источник*: {project.source.title}\n\n"
         f"💼 *Количество офферов*: {project.offers}\n\n"
-        f"⏱️ *Создано*: {minutes_ago} минут назад{'⚠️' if minutes_ago > 60 * 48 else ''}"
+        f"⏱️ *Создано*: {minutes_ago} минут назад{' ⚠️' if minutes_ago > 60 * 48 else ''}"
+    )
+
+    gpt_prompt = GPTPrompt.objects.filter(
+        category=project.category,
     )
 
     chat_ids = CategorySubscription.objects.filter(
         Q(category=project.category) | Q(subcategory=project.subcategory)
     ).distinct().values_list('user__chat_id', flat=True)
 
-    for chat_id in chat_ids:
-        keyboard = {
-            "inline_keyboard": [
-                [{"text": "📋 Перейти к заказу", "url": project.url}],
-                [{"text": "🤖 Проанализировать заказ (AI)", "callback_data": f"analyze_order_ai:{project.id}"}],
-                # [{"text": "🧠 Проанализировать заказ (PRO AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
-                [{"text": "❌ Не интересно", "callback_data": "close"}]
-            ]
-        }
+    keyboard = {
+        "inline_keyboard": [
+            [{"text": "📋 Перейти к заказу", "url": project.url}],
+        ]
+    }
+    if gpt_prompt:
+        keyboard["inline_keyboard"].append(
+            [{"text": "🤖 Проанализировать заказ (AI)", "callback_data": f"analyze_order_ai:{project.id}"}],
+        )
+    # if gpt_prompt.count() > 1:
+    #     keyboard["inline_keyboard"].append(
+    #         [{"text": "🧠 Проанализировать заказ (PRO AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
+    #     )
 
-        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+    keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+
+    for chat_id in chat_ids:
         payload = {
             "chat_id": chat_id,
             "text": text,
@@ -198,8 +214,8 @@ def gpt_request(project_id, message_id, chat_id, gpt_model_id):
         send_limit_exceeded_message(chat_id, message_id, bool(user.user_subscription))
         return
 
-    model = GPTModel.objects.get(code=gpt_model_id)
-    prompt = model.prompts.get(
+    prompt = GPTPrompt.objects.get(
+        model__code=gpt_model_id,
         category=project.category,
     )
     request = prompt.text.format(
@@ -211,16 +227,7 @@ def gpt_request(project_id, message_id, chat_id, gpt_model_id):
         description=project.description,
         price=project.price,
         price_max=project.price_max,
-    ) + """{
-      "rate": "int",
-      "structure": "str",
-      "stages": [
-        {"name": str", "description": "str", "time": "int"},
-        ...
-      ],  
-      "technologies": "list",
-      "response":  "str"
-    }"""
+    ) + prompt.json_format
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -229,7 +236,7 @@ def gpt_request(project_id, message_id, chat_id, gpt_model_id):
     ]
 
     completion = client.chat.completions.create(
-        model=model.code,
+        model=gpt_model_id,
         response_format={"type": "json_object"},
         messages=messages,
     )
@@ -241,12 +248,13 @@ def gpt_request(project_id, message_id, chat_id, gpt_model_id):
     total_hours = sum(stage["time"] for stage in response_json["stages"])
     potential_price = total_hours * user.hourly_rate if user.hourly_rate else None
 
+    template_name = f"{project.category.code}_report.html"
     response_json["hourly_rate"] = user.hourly_rate
-    response_json["project_title"] = project.title
-    response_json["project_description"] = project.description
+    response_json["project_title"] = html2text.html2text(project.title).strip()
+    response_json["project_description"] = html2text.html2text(project.description).strip()
     response_json["total_hours"] = total_hours
     response_json["potential_price"] = potential_price
-    send_html_to_telegram(user.chat_id, message_id, response_json)
+    send_html_to_telegram(user.chat_id, message_id, response_json, template_name)
 
 
 # celery -A backend worker --loglevel=info

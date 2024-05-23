@@ -60,6 +60,11 @@ class KworkSpider(scrapy.Spider):
         "Authorization": "Basic bW9iaWxlX2FwaTpxRnZmUmw3dw==",
     }
 
+    CATEGORIES = [{
+        "backend": "programming",
+        "crawler": 11,
+    }]
+
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._token = None
@@ -95,9 +100,7 @@ class KworkSpider(scrapy.Spider):
 
     def parse_projects(self, response):
         for row in response.json()["response"]:
-            result = Project.parse_obj(row).dict()
-            # if result["category"] in [11]:  # only for testing
-            yield result
+            yield Project.parse_obj(row).dict()
 
 
 if __name__ == "__main__":

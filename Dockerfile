@@ -15,7 +15,7 @@ FROM base AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y git gcc python3-dev musl-dev libpq-dev cmake build-essential
+RUN apt-get update && apt-get install -y git gcc python3-dev musl-dev libpq-dev cmake build-essential wkhtmltopdf
 
 COPY Pipfile .
 COPY Pipfile.lock .
