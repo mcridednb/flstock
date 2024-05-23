@@ -98,7 +98,7 @@ def process_order_task(order):
     try:
         source_category = source.categories.get(code=str(order.get("category")))
     except Exception as exc:
-        pass
+        return
 
     # if order["subcategory"]:
     #     subcategory = Subcategory.objects.get(id=order["subcategory"])
