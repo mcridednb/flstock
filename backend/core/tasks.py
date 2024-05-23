@@ -95,7 +95,10 @@ def process_order_task(order):
         logger.critical(f"Неизвестный источник: {source}")
         return
 
-    source_category = source.categories.get(code=str(order.get("category")))
+    try:
+        source_category = source.categories.get(code=str(order.get("category")))
+    except Exception as exc:
+        pass
 
     # if order["subcategory"]:
     #     subcategory = Subcategory.objects.get(id=order["subcategory"])
