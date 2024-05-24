@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from io import BytesIO
 
 import html2text
 import pytz
@@ -12,7 +13,7 @@ from loguru import logger
 from openai import OpenAI
 
 from backend.celery import app
-from core.models import Project, CategorySubscription, TelegramUser, Source, GPTPrompt
+from core.models import Project, CategorySubscription, TelegramUser, Source, GPTPrompt, Category, Subcategory
 from core.utils import send_limit_exceeded_message, send_html_to_telegram, create_infographic
 
 
@@ -31,15 +32,28 @@ def process_order_task(order):
         logger.critical(f"Неизвестный источник: {source}")
         return
 
-    try:
-        source_category = source.categories.get(code=str(order.get("category")))
-    except Exception as exc:
+    category = order.pop("category", None)
+    if not category:
+        logger.critical(f"Отсутствует категория: {category}")
         return
 
-    # if order["subcategory"]:
-    #     subcategory = Subcategory.objects.get(id=order["subcategory"])
-    # else:
-    # subcategory = None
+    try:
+        category = Category.objects.get(code=category)
+    except Exception as exc:
+        logger.critical(f"Неизвестная категория: {category}")
+        return
+
+    subcategory = order.pop("subcategory", None)
+    if not subcategory:
+        logger.critical(f"Отсутствует подкатегория: {subcategory}")
+        return
+
+    try:
+        subcategory = Subcategory.objects.get(code=subcategory)
+    except Exception as exc:
+        logger.critical(f"Неизвестная подкатегория: {subcategory}")
+        return
+
     project, created = Project.objects.get_or_create(
         project_id=order["project_id"],
         source=source,
@@ -51,7 +65,8 @@ def process_order_task(order):
             "url": order.get("url"),
             "offers": order.get("offers"),
             "order_created": order.get("order_created"),
-            "category": source_category.category,
+            "category": category,
+            "subcategory": subcategory,
         },
     )
     if created:
@@ -73,11 +88,13 @@ def send_project_task(project_id):
 
     price_text = ""
     if project.price and project.price_max:
-        price_text = f"от {int(project.price)} до {int(project.price_max)}"
+        price_text = f"от {int(project.price)} до {int(project.price_max)} "
     elif project.price:
-        price_text = f"{int(project.price)}"
+        price_text = f"{int(project.price)} "
     elif project.price_max:
-        price_text = f"{int(project.price_max)}"
+        price_text = f"{int(project.price_max)} "
+
+    price_text += project.currency_symbol
 
     gpt_prompt = GPTPrompt.objects.filter(
         category=project.category,
@@ -103,17 +120,21 @@ def send_project_task(project_id):
 
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendPhoto"
+    img_data = create_infographic(title, price_text, project.source.title, project.offers, minutes_ago)
 
     for chat_id in chat_ids:
+        if len(description) > 350:
+            caption = f"{description[:350]}...."
+        else:
+            caption = description
+
         payload = {
             "chat_id": chat_id,
-            "caption": (
-                f"{description[:1010]}...."
-            ),
+            "caption": caption,
             "reply_markup": json.dumps(keyboard),
         }
         response = requests.post(url, data=payload, files={
-            "photo": create_infographic(title, price_text, project.source.title, project.offers, minutes_ago)
+            "photo": BytesIO(img_data)
         })
         if response.status_code != 200:
             print(f"Failed to send message to {chat_id}: {response.text}")

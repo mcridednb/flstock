@@ -17,7 +17,7 @@ class Source(models.Model):
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
-    code = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.title
@@ -44,6 +44,7 @@ class SourceCategory(models.Model):
 
 class Subcategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    code = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=100)
 
     def __str__(self):
@@ -68,8 +69,8 @@ class Project(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     source = models.ForeignKey(Source, on_delete=models.PROTECT)
-    subcategory = models.ForeignKey(Subcategory, on_delete=models.PROTECT, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.PROTECT, null=True, blank=True)
     price_max = models.DecimalField(max_digits=10, decimal_places=2)
     url = models.URLField(max_length=200)
     offers = models.IntegerField(default=0)
@@ -84,6 +85,7 @@ class Project(models.Model):
         choices=StatusChoices.choices,
         default=StatusChoices.ACCEPTED,
     )
+    currency_symbol = models.CharField(max_length=255, default="")
 
     def __str__(self):
         return f"{self.title} ({self.source})"

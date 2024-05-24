@@ -1,13 +1,23 @@
+import os
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urljoin, urlencode
 
+import redis
 import scrapy
+from dotenv import load_dotenv
 from pydantic import Field, field_validator
 
-from spiders.kwork.constants import SUBCATEGORY_CATEGORY_MAP
+from spiders.kwork.constants import CATEGORIES, SUBCATEGORIES_REVERSE
 from spiders.models import ExtraMixin
 from spiders.utils import start_crawl
+
+load_dotenv()
+
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+
+redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
 
 class Project(ExtraMixin):
@@ -18,13 +28,15 @@ class Project(ExtraMixin):
     source: str = Field(default="kwork")
     offers: int
     order_created: int = Field(alias="date_confirm")
-    subcategory: int = Field(alias="category_id")
-    category: Optional[int] = Field(alias="parent_category_id")
+    category: str
+    subcategory: str = Field(alias="category_id")
+    currency_symbol: str
     price_max: Optional[int] = Field(alias="possible_price_limit")
 
-    @field_validator("category", mode="before")
-    def parse_category(cls, value):
-        return SUBCATEGORY_CATEGORY_MAP[value] if not value else value
+    @field_validator("subcategory", mode="before")
+    def parse_subcategory(cls, value):
+        if subcategory := SUBCATEGORIES_REVERSE.get(value):
+            return subcategory[1]
 
     def get_id(self):
         return f"{self.source}_{self.project_id}"
@@ -45,6 +57,7 @@ class KworkSpider(scrapy.Spider):
         "DOWNLOAD_DELAY": 1,
         "URLLENGTH_LIMIT": 100000,
     }
+    CURRENCY_SYMBOL = "₽"
     BASE_URL = "https://api.kwork.ru"
     LOGIN_URL = urljoin(BASE_URL, "signIn")
     PROJECTS_URL = urljoin(BASE_URL, "projects")
@@ -60,46 +73,57 @@ class KworkSpider(scrapy.Spider):
         "Authorization": "Basic bW9iaWxlX2FwaTpxRnZmUmw3dw==",
     }
 
-    CATEGORIES = [{
-        "backend": "programming",
-        "crawler": 11,
-    }]
-
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._token = None
 
+    def start_parsing(self):
+        for category_code, value in CATEGORIES.items():
+            query_string = urlencode({
+                "categories": value["code"],
+                "token": self._token,
+            })
+            url = f"{self.PROJECTS_URL}?{query_string}"
+            yield scrapy.Request(
+                url=url,
+                method="POST",
+                callback=self.parse_projects,
+                headers=self.HEADERS,
+                meta={
+                    "category": category_code,
+                }
+            )
+
     def start_requests(self):
-        query_string = urlencode({
-            "login": self.settings.get("KWORK_LOGIN"),
-            "password": self.settings.get("KWORK_PASSWORD"),
-            "phone_last": self.settings.get("KWORK_PHONE_LAST"),
-        })
-        url = f"{self.LOGIN_URL}?{query_string}"
-        yield scrapy.Request(
-            url=url,
-            method="POST",
-            callback=self.parse_token,
-            headers=self.HEADERS,
-        )
+        self._token = redis_client.get("kwork_token")
+        if not self._token:
+            query_string = urlencode({
+                "login": self.settings.get("KWORK_LOGIN"),
+                "password": self.settings.get("KWORK_PASSWORD"),
+                "phone_last": self.settings.get("KWORK_PHONE_LAST"),
+            })
+            url = f"{self.LOGIN_URL}?{query_string}"
+            yield scrapy.Request(
+                url=url,
+                method="POST",
+                callback=self.parse_token,
+                headers=self.HEADERS,
+            )
+        else:
+            self._token = self._token.decode("utf-8")
+            yield from self.start_parsing()
 
     def parse_token(self, response):
         self._token = response.json()["response"]["token"]
-
-        query_string = urlencode({
-            "categories": "all",
-            "token": self._token,
-        })
-        url = f"{self.PROJECTS_URL}?{query_string}"
-        yield scrapy.Request(
-            url=url,
-            method="POST",
-            callback=self.parse_projects,
-            headers=self.HEADERS,
-        )
+        redis_client.set("kwork_token", self._token)
+        yield from self.start_parsing()
 
     def parse_projects(self, response):
+        category = response.meta.get("category")
+
         for row in response.json()["response"]:
+            row["category"] = category
+            row["currency_symbol"] = self.CURRENCY_SYMBOL
             yield Project.parse_obj(row).dict()
 
 

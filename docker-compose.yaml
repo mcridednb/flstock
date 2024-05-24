@@ -225,7 +225,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python -m gunicorn --workers=4 --env DJANGO_SETTINGS_MODULE=backend.settings backend.wsgi:application --bind 0.0.0.0:8000
+    command: python manage.py migrate && python -m gunicorn --workers=4 --env DJANGO_SETTINGS_MODULE=backend.settings backend.wsgi:application --bind 0.0.0.0:8000
     env_file:
       - .env
     ports:

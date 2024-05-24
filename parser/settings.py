@@ -136,6 +136,9 @@ RABBITMQ_PASSWORD = os.getenv("RABBITMQ_DEFAULT_PASS")
 RABBITMQ_EXCHANGE = os.getenv("RABBITMQ_EXCHANGE")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE")
 
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+
 # Set settings whose default value is deprecated to a future-proof value
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"

@@ -48,16 +48,18 @@ def create_infographic(title, price_text, source, offers, minutes_ago):
             pilmoji.text((50, current_height), line, (255, 255, 255), font=title_font)
             current_height += title_font_size + 10
 
-        pilmoji.text((50, current_height + 50), f"💰 {price_text}", (255, 255, 255), font=price_font)
+        pilmoji.text((50, current_height + 50), f"💰{price_text}", (255, 255, 255), font=price_font)
 
         pilmoji.text((50, current_height + 150), f"💼 Откликов: {offers}", (255, 255, 255), font=text_font)
-        pilmoji.text((50, current_height + 200), f"⏱️ {minutes_ago} минут назад", (255, 255, 255), font=text_font)
+        pilmoji.text(
+            (50, current_height + 200), f"⏱️ {minutes_ago} минут назад", (255, 255, 255), font=text_font
+        )
 
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
 
-    return buffer
+    return buffer.getvalue()
 
 
 def create_pdf_file(response, template_name):
