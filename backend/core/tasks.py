@@ -104,12 +104,6 @@ def send_project_task(project_id):
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendPhoto"
 
-    img_buffer = create_infographic(title, price_text, project.source.title, project.offers, minutes_ago)
-
-    files = {
-        "photo": img_buffer
-    }
-
     for chat_id in chat_ids:
         payload = {
             "chat_id": chat_id,
@@ -118,7 +112,9 @@ def send_project_task(project_id):
             ),
             "reply_markup": json.dumps(keyboard),
         }
-        response = requests.post(url, data=payload, files=files)
+        response = requests.post(url, data=payload, files={
+            "photo": create_infographic(title, price_text, project.source.title, project.offers, minutes_ago)
+        })
         if response.status_code != 200:
             print(f"Failed to send message to {chat_id}: {response.text}")
             return
