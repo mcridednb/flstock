@@ -1,83 +1,19 @@
-import io
 import json
 from datetime import datetime
 
 import html2text
-import pdfkit
 import pytz
 import redis
 import requests
 from django.conf import settings
 from django.db.models import Q
-from django.template.loader import render_to_string
 from django.utils.timezone import now
 from loguru import logger
 from openai import OpenAI
 
 from backend.celery import app
 from core.models import Project, CategorySubscription, TelegramUser, Source, GPTPrompt
-
-
-def create_pdf_file(response, template_name):
-    html_content = render_to_string(template_name, {'response': response})
-    options = {
-        'encoding': 'UTF-8'
-    }
-    pdf_buffer = pdfkit.from_string(html_content, False, options=options)
-    buffer = io.BytesIO(pdf_buffer)
-    buffer.seek(0)
-    return buffer
-
-
-def send_html_to_telegram(chat_id, message_id, response, template_name):
-    pdf_buffer = create_pdf_file(response, template_name)
-    files = {
-        'document': (f'report.pdf', pdf_buffer, 'application/pdf')
-    }
-    data = {
-        'chat_id': chat_id,
-        'text': response["response"],
-        'parse_mode': 'Markdown',
-        'reply_to_message_id': message_id,
-    }
-    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendDocument"
-    response = requests.post(url, data=data, files=files)
-    return response.json()
-
-
-def send_limit_exceeded_message(chat_id, message_id, is_pro: bool):
-    text = (
-        "🚫 Дневной лимит на анализ данного типа превышен.\n"
-        "Лимиты сбрасываются каждый день в 00:00 по МСК."
-    )
-    # keyboard = []
-    # if not is_pro:
-    #     keyboard.append([
-    #         {
-    #             'text': '🛒 Купить подписку',
-    #             'callback_data': 'get_subscribe'
-    #         }
-    #     ])
-    # else:
-    #     keyboard.append([
-    #         {
-    #             'text': 'ℹ️ Подробнее о лимитах',
-    #             'callback_data': 'limit_info'
-    #         }
-    #     ])
-    # keyboard = {
-    #     'inline_keyboard': keyboard
-    # }
-    data = {
-        'chat_id': chat_id,
-        'text': text,
-        'parse_mode': 'Markdown',
-        'reply_to_message_id': message_id,
-        # 'reply_markup': keyboard
-    }
-    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
-    response = requests.post(url, json=data)
-    return response.json()
+from core.utils import send_limit_exceeded_message, send_html_to_telegram, create_infographic
 
 
 @app.task
@@ -137,20 +73,11 @@ def send_project_task(project_id):
 
     price_text = ""
     if project.price and project.price_max:
-        price_text = f"💰 *Цена*: от {project.price} до {project.price_max}\n\n"
+        price_text = f"от {int(project.price)} до {int(project.price_max)}"
     elif project.price:
-        price_text = f"💰 *Цена*: {project.price}\n\n"
+        price_text = f"{int(project.price)}"
     elif project.price_max:
-        price_text = f"💰 *Максимальная цена*: {project.price_max}\n\n"
-
-    text = (
-        f"📋 *Проект*: {title}\n\n"
-        f"📝 *Описание*: {description}\n\n"
-        f"{price_text}"
-        f"🌐 *Источник*: {project.source.title}\n\n"
-        f"💼 *Количество офферов*: {project.offers}\n\n"
-        f"⏱️ *Создано*: {minutes_ago} минут назад{' ⚠️' if minutes_ago > 60 * 48 else ''}"
-    )
+        price_text = f"{int(project.price_max)}"
 
     gpt_prompt = GPTPrompt.objects.filter(
         category=project.category,
@@ -175,18 +102,26 @@ def send_project_task(project_id):
     #     )
 
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
-    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendPhoto"
+
+    img_buffer = create_infographic(title, price_text, project.source.title, project.offers, minutes_ago)
+
+    files = {
+        "photo": img_buffer
+    }
 
     for chat_id in chat_ids:
         payload = {
             "chat_id": chat_id,
-            "text": text,
-            "reply_markup": keyboard,
-            "parse_mode": "Markdown"
+            "caption": (
+                f"{description[:1010]}...."
+            ),
+            "reply_markup": json.dumps(keyboard),
         }
-        response = requests.post(url, json=payload)
+        response = requests.post(url, data=payload, files=files)
         if response.status_code != 200:
             print(f"Failed to send message to {chat_id}: {response.text}")
+            return
 
     project.status = Project.StatusChoices.DISTRIBUTED
     project.save()

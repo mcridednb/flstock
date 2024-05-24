@@ -77,7 +77,7 @@ async def get_menu_keyboard():
         text="📝 Редактировать категории",
         callback_data="categories",
     )], [types.InlineKeyboardButton(
-        text="❤️Поддержать проект",
+        text="❤️ Поддержать проект",
         callback_data="donate",
     )], [types.InlineKeyboardButton(
         text="❌ Закрыть",

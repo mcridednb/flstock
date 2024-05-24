@@ -27,6 +27,9 @@ certifi = "*"
 pendulum = "==2.1.2"
 django-jsoneditor = "*"
 pdfkit = "*"
+pillow = "*"
+pilmoji = "*"
+emoji = "==1.7.0"
 
 [dev-packages]
 
