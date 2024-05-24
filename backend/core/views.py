@@ -6,9 +6,12 @@ from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.views import APIView
 
-from core.models import Category, CategorySubscription, TelegramUser, Project
+from core.models import Category, CategorySubscription, TelegramUser, Project, Subcategory
 from core.serializers import (
-    TelegramUserSerializer, CategorySerializer, CategorySubscriptionSerializer,
+    TelegramUserSerializer,
+    CategorySerializer,
+    SubcategorySerializer,
+    CategorySubscriptionSerializer,
     ProjectSerializer,
 )
 from core.tasks import gpt_request
@@ -32,8 +35,13 @@ class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+
+class SubcategoryListView(generics.ListAPIView):
+    queryset = Subcategory.objects.all()
+    serializer_class = SubcategorySerializer
+
     def get_serializer_context(self):
-        context = super(CategoryListView, self).get_serializer_context()
+        context = super().get_serializer_context()
         context["chat_id"] = self.request.query_params.get("chat_id")
         return context
 

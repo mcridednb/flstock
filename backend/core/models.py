@@ -27,6 +27,19 @@ class Category(models.Model):
         verbose_name_plural = "Категории"
 
 
+class Subcategory(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    code = models.CharField(max_length=100, unique=True)
+    title = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Подкатегорию"
+        verbose_name_plural = "Подкатегории"
+
+
 class SourceCategory(models.Model):
     title = models.CharField(max_length=255)
     code = models.CharField(max_length=255)
@@ -40,19 +53,6 @@ class SourceCategory(models.Model):
 
     def __str__(self):
         return f"{self.source}:{self.title} ({self.code}) -> {self.category}"
-
-
-class Subcategory(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    code = models.CharField(max_length=100, unique=True)
-    title = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        verbose_name = "Подкатегорию"
-        verbose_name_plural = "Подкатегории"
 
 
 class Project(models.Model):

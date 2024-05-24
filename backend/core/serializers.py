@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from core.models import TelegramUser, Category, CategorySubscription, Project
+from core.models import TelegramUser, Category, CategorySubscription, Project, Subcategory
 
 
 class TelegramUserSerializer(serializers.ModelSerializer):
@@ -23,6 +23,12 @@ class TelegramUserSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["code", "title"]
+
+
+class SubcategorySerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     def get_is_subscribed(self, obj):
@@ -30,24 +36,24 @@ class CategorySerializer(serializers.ModelSerializer):
         if chat_id:
             try:
                 user = TelegramUser.objects.get(chat_id=chat_id)
-                return CategorySubscription.objects.filter(user=user, category=obj).exists()
+                return CategorySubscription.objects.filter(user=user, subcategory=obj).exists()
             except TelegramUser.DoesNotExist:
                 return False
         return False
 
     class Meta:
-        model = Category
-        fields = ["id", "title", "is_subscribed"]
+        model = Subcategory
+        fields = ["title", "is_subscribed"]
 
 
 class CategorySubscriptionSerializer(serializers.ModelSerializer):
     chat_id = serializers.CharField(write_only=True)
-    category_title = serializers.CharField(read_only=True, source="category.title")
+    subcategory_title = serializers.CharField(read_only=True, source="subcategory.title")
 
     class Meta:
         model = CategorySubscription
-        fields = ["id", "chat_id", "category", "subcategory", "category_title"]
-        extra_kwargs = {"subcategory": {"required": False, "allow_null": True}}
+        fields = ["id", "chat_id", "category", "subcategory", "subcategory_title"]
+        extra_kwargs = {"category": {"required": False, "allow_null": True}}
 
     def create(self, validated_data):
         chat_id = validated_data.pop("chat_id", None)
@@ -57,7 +63,7 @@ class CategorySubscriptionSerializer(serializers.ModelSerializer):
         try:
             subscription, created = CategorySubscription.objects.update_or_create(
                 user=user,
-                category=validated_data.get("category"),
+                subcategory=validated_data.get("subcategory"),
                 defaults={**validated_data}
             )
         except Exception as exc:
