@@ -128,14 +128,17 @@ def send_project_task(project_id):
     )
 
     for user in users:
-        stop = False
-        stop_words = [word.strip().lower() for word in user.stop_words.split(",")]
-        for stop_word in stop_words:
-            if stop_word in title.lower() or stop_word in description.lower():
-                stop = True
+        if user.stop_words:
+            stop = False
 
-        if stop:
-            continue
+            stop_words = [word.strip().lower() for word in user.stop_words.split(",")]
+            for stop_word in stop_words:
+                if stop_word in title.lower() or stop_word in description.lower():
+                    stop = True
+
+            if stop:
+                continue
+
         if len(description) > 350:
             caption = f"{description[:350]}...."
         else:
