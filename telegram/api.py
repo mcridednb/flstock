@@ -44,9 +44,12 @@ async def user_patch(message, field, value):
     return await api_call(hdrs.METH_PATCH, endpoint, json=data)
 
 
-async def categories_list():
+async def categories_list(message):
     endpoint = "categories/"
-    return await api_call(hdrs.METH_GET, endpoint)
+    params = {
+        "chat_id": message.from_user.id,
+    }
+    return await api_call(hdrs.METH_GET, endpoint, params=params)
 
 
 async def subcategories_list(category, message):

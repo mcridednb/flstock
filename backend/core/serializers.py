@@ -23,9 +23,21 @@ class TelegramUserSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    def get_is_subscribed(self, obj):
+        chat_id = self.context.get('chat_id')
+        if chat_id:
+            try:
+                user = TelegramUser.objects.get(chat_id=chat_id)
+                return CategorySubscription.objects.filter(user=user, subcategory__category=obj).exists()
+            except TelegramUser.DoesNotExist:
+                return False
+        return False
+
     class Meta:
         model = Category
-        fields = ["code", "title"]
+        fields = ["title", "code", "is_subscribed"]
 
 
 class SubcategorySerializer(serializers.ModelSerializer):
