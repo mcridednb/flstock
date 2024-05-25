@@ -101,7 +101,7 @@ def send_project_task(project_id):
     )
 
     chat_ids = CategorySubscription.objects.filter(
-        Q(category=project.category) | Q(subcategory=project.subcategory)
+        subcategory=project.subcategory
     ).distinct().values_list('user__chat_id', flat=True)
 
     keyboard = {
@@ -120,7 +120,14 @@ def send_project_task(project_id):
 
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendPhoto"
-    img_data = create_infographic(title, price_text, project.source.title, project.offers, minutes_ago)
+    img_data = create_infographic(
+        title,
+        price_text,
+        project.source.title,
+        project.offers,
+        minutes_ago,
+        project.subcategory.title,
+    )
 
     for chat_id in chat_ids:
         if len(description) > 350:

@@ -43,22 +43,34 @@ class SubcategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subcategory
-        fields = ["title", "is_subscribed"]
+        fields = ["title", "code", "is_subscribed"]
 
 
 class CategorySubscriptionSerializer(serializers.ModelSerializer):
     chat_id = serializers.CharField(write_only=True)
     subcategory_title = serializers.CharField(read_only=True, source="subcategory.title")
+    subcategory_code = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = CategorySubscription
-        fields = ["id", "chat_id", "category", "subcategory", "subcategory_title"]
-        extra_kwargs = {"category": {"required": False, "allow_null": True}}
+        fields = ["id", "chat_id", "category", "subcategory", "subcategory_title", "subcategory_code"]
+        extra_kwargs = {
+            "category": {"required": False, "allow_null": True},
+            "subcategory": {"required": False, "allow_null": True}
+        }
 
     def create(self, validated_data):
         chat_id = validated_data.pop("chat_id", None)
         user = self.validate_chat_id(chat_id)
         validated_data["user"] = user
+
+        subcategory_code = validated_data.pop("subcategory_code", None)
+        if subcategory_code:
+            try:
+                subcategory = Subcategory.objects.get(code=subcategory_code)
+                validated_data["subcategory"] = subcategory
+            except Subcategory.DoesNotExist:
+                raise ValidationError(f"Subcategory with code '{subcategory_code}' does not exist.")
 
         try:
             subscription, created = CategorySubscription.objects.update_or_create(
@@ -68,6 +80,7 @@ class CategorySubscriptionSerializer(serializers.ModelSerializer):
             )
         except Exception as exc:
             raise ValidationError(exc)
+
         if not created:
             subscription.delete()
         return subscription

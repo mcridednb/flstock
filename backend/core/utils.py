@@ -24,13 +24,14 @@ def wrap_text(text, font, max_width):
     return lines
 
 
-def create_infographic(title, price_text, source, offers, minutes_ago):
+def create_infographic(title, price_text, source, offers, minutes_ago, subcategory):
     font_path = FONT_PATH
-    title_font_size = 85
+    title_font_size = 80
     title_font = ImageFont.truetype(font_path, title_font_size)
-    price_font = ImageFont.truetype(font_path, 45)
+    price_font = ImageFont.truetype(font_path, 40)
     logo_font = ImageFont.truetype(font_path, 50)
-    text_font = ImageFont.truetype(font_path, 35)
+    text_font = ImageFont.truetype(font_path, 30)
+    breadcrumbs = ImageFont.truetype(font_path, 30)
 
     max_title_width = 1100
     wrapped_title = wrap_text(title, title_font, max_title_width)
@@ -43,16 +44,18 @@ def create_infographic(title, price_text, source, offers, minutes_ago):
         pilmoji.text((50, 50), source, (255, 255, 255), font=logo_font)
         pilmoji.text((1150, 50), "Фрилансер", (255, 255, 255), font=logo_font, anchor="ra")
 
+        pilmoji.text((55, 200), subcategory, (255, 255, 255), font=breadcrumbs)
+
         current_height = 250
         for line in wrapped_title:
             pilmoji.text((50, current_height), line, (255, 255, 255), font=title_font)
             current_height += title_font_size + 10
 
-        pilmoji.text((50, current_height + 50), f"💰{price_text}", (255, 255, 255), font=price_font)
+        pilmoji.text((50, current_height + 20), f"💰{price_text}", (255, 255, 255), font=price_font)
 
-        pilmoji.text((50, current_height + 150), f"💼 Откликов: {offers}", (255, 255, 255), font=text_font)
+        pilmoji.text((55, current_height + 150), f"💼 Откликов: {offers}", (255, 255, 255), font=text_font)
         pilmoji.text(
-            (50, current_height + 200), f"⏱️ {minutes_ago} минут назад", (255, 255, 255), font=text_font
+            (55, current_height + 200), f"⏱️ {minutes_ago} минут назад", (255, 255, 255), font=text_font
         )
 
     buffer = BytesIO()

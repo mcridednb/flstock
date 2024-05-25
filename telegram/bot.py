@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 import api
-from states import Profile
+from states import Profile, Registration
 
 load_dotenv()
 logger.remove()
@@ -35,19 +35,37 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 
-async def get_subscriptions_keyboard(message, start=False):
-    categories, _ = await api.categories_list(message)
+async def get_subscriptions_keyboard(category, message):
+    subcategories, _ = await api.subcategories_list(category, message)
     buttons = []
-    for category in categories:
-        title = category["title"]
-        if category["is_subscribed"]:
+    for subcategory in subcategories:
+        title = subcategory["title"]
+        if subcategory["is_subscribed"]:
             title = f"✅{title}"
         buttons.append([types.InlineKeyboardButton(
             text=title,
-            callback_data=str(category["id"]),
+            callback_data=f"{subcategory['code']}",
         )])
 
-    if start:
+    buttons.append([types.InlineKeyboardButton(
+        text="⬅️Назад",
+        callback_data="back",
+    )])
+
+    return types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+async def get_categories_keyboard(state):
+    categories, _ = await api.categories_list()
+    buttons = []
+    for category in categories:
+        buttons.append([types.InlineKeyboardButton(
+            text=category["title"],
+            callback_data=category["code"],
+        )])
+
+    state = await state.get_state()
+    if state in [Registration.category, Registration.subcategory]:
         buttons.append([types.InlineKeyboardButton(
             text="Далее ➡️",
             callback_data="next",
@@ -115,13 +133,13 @@ async def send_welcome(message: Message, state: FSMContext):
             parse_mode="Markdown"
         )
     else:
-        await state.set_state(Profile.category)
-        keyboard = await get_subscriptions_keyboard(message, start=True)
+        await state.set_state(Registration.category)
+        keyboard = await get_categories_keyboard(state)
         await message.answer(
             "👋 *Добро пожаловать!*\n\n"
             "🔔 Пожалуйста, отметьте категории, "
             "по которым хотите получать уведомления:\n\n"
-            "(Это можно будет изменить позже в настройках)",
+            "(Это можно будет изменить в настройках позднее)",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
@@ -135,13 +153,34 @@ async def process_close(callback_query: CallbackQuery, state: FSMContext) -> Non
 
 @dp.callback_query(lambda call: call.data == "back")
 async def process_back(callback_query: CallbackQuery, state: FSMContext) -> None:
-    await state.clear()
-    keyboard = await get_menu_keyboard()
-    await callback_query.message.edit_text(
-        text="📋 *Выберите действие, которое хотите выполнить:*",
-        reply_markup=keyboard,
-        parse_mode="Markdown"
-    )
+    keyboard = await get_categories_keyboard(state)
+
+    if await state.get_state() == Registration.subcategory:
+        await state.set_state(Registration.category)
+        await callback_query.message.edit_text(
+            "👋 *Добро пожаловать!*\n\n"
+            "🔔 Пожалуйста, отметьте категории, "
+            "по которым хотите получать уведомления:\n\n"
+            "(Это можно будет изменить в настройках позднее)",
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
+    elif await state.get_state() == Profile.subcategory:
+        await state.set_state(Profile.category)
+        await callback_query.message.edit_text(
+            "🔔 Пожалуйста, отметьте категории, "
+            "по которым хотите получать уведомления:\n\n",
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
+    else:
+        await state.clear()
+        keyboard = await get_menu_keyboard()
+        await callback_query.message.edit_text(
+            text="📋 *Выберите действие, которое хотите выполнить:*",
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
 
 
 @dp.message(Command("menu"))
@@ -165,10 +204,51 @@ async def process_next(callback_query: CallbackQuery, state: FSMContext) -> None
     )
 
 
+@dp.callback_query(Registration.category)
+async def process_category(callback_query: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(Registration.subcategory)
+    await state.set_data({
+        "category": callback_query.data
+    })
+    keyboard = await get_subscriptions_keyboard(callback_query.data, callback_query)
+    await callback_query.message.edit_text(
+        "👋 *Добро пожаловать!*\n\n"
+        "🔔 Пожалуйста, отметьте категории, "
+        "по которым хотите получать уведомления:\n\n"
+        "(Это можно будет изменить в настройках позднее)",
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
 @dp.callback_query(Profile.category)
 async def process_category(callback_query: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(Profile.subcategory)
+    await state.set_data({
+        "category": callback_query.data
+    })
+    keyboard = await get_subscriptions_keyboard(callback_query.data, callback_query)
+    await callback_query.message.edit_text(
+        "🔔 Пожалуйста, отметьте категории, "
+        "по которым хотите получать уведомления:\n\n",
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+@dp.callback_query(Registration.subcategory)
+async def process_subcategory(callback_query: CallbackQuery, state: FSMContext) -> None:
     await api.category_subscribe(callback_query)
-    keyboard = await get_subscriptions_keyboard(callback_query)
+    data = await state.get_data()
+    keyboard = await get_subscriptions_keyboard(data["category"], callback_query)
+    await callback_query.message.edit_reply_markup(reply_markup=keyboard)
+
+
+@dp.callback_query(Profile.subcategory)
+async def process_subcategory(callback_query: CallbackQuery, state: FSMContext) -> None:
+    await api.category_subscribe(callback_query)
+    data = await state.get_data()
+    keyboard = await get_subscriptions_keyboard(data["category"], callback_query)
     await callback_query.message.edit_reply_markup(reply_markup=keyboard)
 
 
@@ -189,7 +269,7 @@ async def get_profile_data(message):
 @dp.callback_query(lambda call: call.data == "categories")
 async def process_categories(callback_query: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(Profile.category)
-    keyboard = await get_subscriptions_keyboard(callback_query)
+    keyboard = await get_categories_keyboard(state)
 
     await callback_query.message.edit_text(
         "🔔 Пожалуйста, отметьте категории, "
