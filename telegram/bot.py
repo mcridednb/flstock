@@ -5,7 +5,7 @@ import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -114,6 +114,7 @@ async def get_change_profile_keyboard():
         [types.InlineKeyboardButton(text="📝 О себе", callback_data="change_summary")],
         [types.InlineKeyboardButton(text="💼 Опыт", callback_data="change_experience")],
         [types.InlineKeyboardButton(text="⏰ Ставка в час", callback_data="change_hourly_rate")],
+        [types.InlineKeyboardButton(text="⛔️ Минус слова", callback_data="change_stop_words")],
         # [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_subscription")],
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back")]
     ]
@@ -131,7 +132,7 @@ async def send_welcome(message: Message, state: FSMContext):
         await state.clear()
         keyboard = await get_menu_keyboard()
         await message.answer(
-            text="📋 *Выберите нужное действие:*",
+            text="📋 *Выберите действие, которое хотите выполнить::*",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
@@ -248,7 +249,11 @@ async def process_category(callback_query: CallbackQuery, state: FSMContext) -> 
 
 @dp.callback_query(Registration.subcategory)
 async def process_subcategory(callback_query: CallbackQuery, state: FSMContext) -> None:
-    await api.category_subscribe(callback_query)
+    response, status = await api.category_subscribe(callback_query)
+    if status == 400:
+        await callback_query.answer(response[0])
+        return
+
     data = await state.get_data()
     keyboard = await get_subscriptions_keyboard(data["category"], callback_query)
     await callback_query.message.edit_reply_markup(reply_markup=keyboard)
@@ -256,20 +261,26 @@ async def process_subcategory(callback_query: CallbackQuery, state: FSMContext) 
 
 @dp.callback_query(Profile.subcategory)
 async def process_subcategory(callback_query: CallbackQuery, state: FSMContext) -> None:
-    await api.category_subscribe(callback_query)
+    response, status = await api.category_subscribe(callback_query)
+    if status == 400:
+        await callback_query.answer(response[0])
+        return
+
     data = await state.get_data()
     keyboard = await get_subscriptions_keyboard(data["category"], callback_query)
     await callback_query.message.edit_reply_markup(reply_markup=keyboard)
 
 
-async def get_profile_data(message):
+async def get_profile_data(message, state):
     profile, _ = await api.user_detail(message)
+    await state.set_data(profile)
     profile_text = (
         f"👤 *Имя:* {profile['name'] or 'Не указано'}\n\n"
         f"🛠️ *Навыки:* {profile['skills'] or 'Не указано'}\n\n"
         f"📝 *О себе:* {profile['summary'] or 'Не указано'}\n\n"
         f"💼 *Опыт:* {profile['experience'] or 'Не указано'}\n\n"
         f"⏰ *Ставка в час:* {profile['hourly_rate'] or 'Не указано'}\n\n"
+        f"⛔️ *Минус слова:* {profile['stop_words'] or 'Не указано'}\n\n"
         # f"🔔 *Подписка:* {profile['user_subscription'] or 'Отсутствует'}\n\n"
         f"*Выберите поле для редактирования:*"
     )
@@ -291,8 +302,9 @@ async def process_categories(callback_query: CallbackQuery, state: FSMContext) -
 
 @dp.callback_query(lambda call: call.data == "profile")
 async def process_profile(callback_query: CallbackQuery, state: FSMContext) -> None:
+    profile_text = await get_profile_data(callback_query, state)
+
     keyboard = await get_change_profile_keyboard()
-    profile_text = await get_profile_data(callback_query)
 
     await callback_query.message.edit_text(
         profile_text,
@@ -328,7 +340,7 @@ async def process_change_name(message: Message, state: FSMContext) -> None:
         return
 
     keyboard = await get_change_profile_keyboard()
-    profile_text = await get_profile_data(message)
+    profile_text = await get_profile_data(message, state)
 
     await message.answer(
         profile_text,
@@ -365,7 +377,7 @@ async def process_change_skills(message: Message, state: FSMContext) -> None:
         return
 
     keyboard = await get_change_profile_keyboard()
-    profile_text = await get_profile_data(message)
+    profile_text = await get_profile_data(message, state)
 
     await message.answer(
         profile_text,
@@ -402,7 +414,7 @@ async def process_change_summary(message: Message, state: FSMContext) -> None:
         return
 
     keyboard = await get_change_profile_keyboard()
-    profile_text = await get_profile_data(message)
+    profile_text = await get_profile_data(message, state)
 
     await message.answer(
         profile_text,
@@ -439,7 +451,7 @@ async def process_change_experience(message: Message, state: FSMContext) -> None
         return
 
     keyboard = await get_change_profile_keyboard()
-    profile_text = await get_profile_data(message)
+    profile_text = await get_profile_data(message, state)
 
     await message.answer(
         profile_text,
@@ -452,7 +464,7 @@ async def process_change_experience(message: Message, state: FSMContext) -> None
 async def process_change_hourly_rate(callback_query: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(Profile.hourly_rate)
     await callback_query.message.edit_text(
-        "💰 *Введите вашу почасовую ставку:*",
+        "✍️ *Введите вашу почасовую ставку:*",
         reply_markup=None,
         parse_mode="Markdown"
     )
@@ -466,8 +478,8 @@ async def process_change_hourly_rate(message: Message, state: FSMContext) -> Non
     if status == 400:
         await message.answer(
             (
-                "❗ Что-то пошло не так. Пожалуйста, введите корректное число.\n\n"
-                "💰 *Введите вашу почасовую ставку:*"
+                "⚠️ Что-то пошло не так. Пожалуйста, введите корректное число.\n\n"
+                "✍️ *Введите вашу почасовую ставку:*"
             ),
             parse_mode="Markdown"
         )
@@ -475,7 +487,46 @@ async def process_change_hourly_rate(message: Message, state: FSMContext) -> Non
         return
 
     keyboard = await get_change_profile_keyboard()
-    profile_text = await get_profile_data(message)
+    profile_text = await get_profile_data(message, state)
+
+    await message.answer(
+        profile_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+@dp.callback_query(lambda call: call.data == "change_stop_words")
+async def process_change_stop_words(callback_query: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    stop_words = data["stop_words"]
+    await state.set_state(Profile.stop_words)
+    await callback_query.message.edit_text(
+        f"*Ваши минус-слова:* `{stop_words}`\n\n"
+        "⚠️ Пожалуйста, помните, что строка не должна превышать 2048 символов.\n\n"
+        "✍️ *Введите минус-слова:*",
+        parse_mode="Markdown"
+    )
+
+
+@dp.message(Profile.stop_words)
+async def process_change_stop_words(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    _, status = await api.user_patch(message, "stop_words", message.text)
+
+    if status == 400:
+        await message.answer(
+            (
+                "⚠️ Что-то пошло не так. Убедитесь, что строка не превышает 2048 символов.\n\n"
+                "✍️ *Введите минус-слова:*"
+            ),
+            parse_mode="Markdown"
+        )
+        await state.set_state(Profile.stop_words)
+        return
+
+    keyboard = await get_change_profile_keyboard()
+    profile_text = await get_profile_data(message, state)
 
     await message.answer(
         profile_text,
@@ -506,6 +557,12 @@ async def analyze_order_pro_ai(callback_query: CallbackQuery):
         "pro"
     )
     await callback_query.answer(f'Проект отправлен на анализ PRO AI')
+
+# @dp.message(Command("projects"))
+# async def send_projects(message: Message, state: FSMContext):
+#     response, _ = await api.user_create(message)
+#     if not response.get("username"):
+#         ...
 
 
 async def main():

@@ -14,3 +14,4 @@ class Profile(StatesGroup):
     summary = State()
     experience = State()
     hourly_rate = State()
+    stop_words = State()

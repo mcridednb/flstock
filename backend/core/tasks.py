@@ -7,7 +7,6 @@ import pytz
 import redis
 import requests
 from django.conf import settings
-from django.db.models import Q
 from django.utils.timezone import now
 from loguru import logger
 from openai import OpenAI
@@ -101,9 +100,7 @@ def send_project_task(project_id):
         category=project.category,
     )
 
-    chat_ids = CategorySubscription.objects.filter(
-        subcategory=project.subcategory
-    ).distinct().values_list('user__chat_id', flat=True)
+    users = TelegramUser.objects.filter(subscriptions__subcategory=project.subcategory).distinct()
 
     keyboard = {
         "inline_keyboard": [
@@ -130,14 +127,22 @@ def send_project_task(project_id):
         project.subcategory.title,
     )
 
-    for chat_id in chat_ids:
+    for user in users:
+        stop = False
+        stop_words = [word.strip().lower() for word in user.stop_words.split(",")]
+        for stop_word in stop_words:
+            if stop_word in title.lower() or stop_word in description.lower():
+                stop = True
+
+        if stop:
+            continue
         if len(description) > 350:
             caption = f"{description[:350]}...."
         else:
             caption = description
 
         payload = {
-            "chat_id": chat_id,
+            "chat_id": user.chat_id,
             "caption": caption,
             "reply_markup": json.dumps(keyboard),
         }
@@ -145,7 +150,7 @@ def send_project_task(project_id):
             "photo": BytesIO(img_data)
         })
         if response.status_code != 200:
-            print(f"Failed to send message to {chat_id}: {response.text}")
+            print(f"Failed to send message to {user.chat_id}: {response.text}")
             return
 
     project.status = Project.StatusChoices.DISTRIBUTED

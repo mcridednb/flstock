@@ -169,6 +169,8 @@ class TelegramUser(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    stop_words = models.CharField(max_length=2048, null=True, blank=True)
+
     def get_limits(self):
         base = "gpt-3.5-turbo"
         pro = "gpt-4o"

@@ -18,6 +18,7 @@ class TelegramUserSerializer(serializers.ModelSerializer):
             "experience",
             "hourly_rate",
             "user_subscription",
+            "stop_words",
         ]
         read_only_fields = ("user_subscription",)
 
@@ -82,12 +83,18 @@ class CategorySubscriptionSerializer(serializers.ModelSerializer):
                 subcategory = Subcategory.objects.get(code=subcategory_code)
                 validated_data["subcategory"] = subcategory
             except Subcategory.DoesNotExist:
-                raise ValidationError(f"Subcategory with code '{subcategory_code}' does not exist.")
+                raise ValidationError(f"Подкатегория не найдена")
+        else:
+            raise ValidationError(f"Пустой код подкатегории.")
+
+        exist = CategorySubscription.objects.filter(user=user, subcategory=subcategory)
+        if not exist and CategorySubscription.objects.filter(user=user).count() >= 3:
+            raise ValidationError("🚫 К сожалению, вы не можете задать больше 3-х категорий.")
 
         try:
             subscription, created = CategorySubscription.objects.update_or_create(
                 user=user,
-                subcategory=validated_data.get("subcategory"),
+                subcategory=subcategory,
                 defaults={**validated_data}
             )
         except Exception as exc:
