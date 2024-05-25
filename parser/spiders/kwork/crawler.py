@@ -6,6 +6,7 @@ from urllib.parse import urljoin, urlencode
 import redis
 import scrapy
 from dotenv import load_dotenv
+from loguru import logger
 from pydantic import Field, field_validator
 
 from spiders.kwork.constants import CATEGORIES, SUBCATEGORIES_REVERSE
@@ -35,8 +36,10 @@ class Project(ExtraMixin):
 
     @field_validator("subcategory", mode="before")
     def parse_subcategory(cls, value):
-        if subcategory := SUBCATEGORIES_REVERSE.get(value):
-            return subcategory[1]
+        subcategory = SUBCATEGORIES_REVERSE.get(value)
+        if not subcategory:
+            logger.error(f"Unknown subcategory: {value}")
+        return subcategory
 
     def get_id(self):
         return f"{self.source}_{self.project_id}"
@@ -78,9 +81,9 @@ class KworkSpider(scrapy.Spider):
         self._token = None
 
     def start_parsing(self):
-        for category_code, value in CATEGORIES.items():
+        for category_id, category in CATEGORIES.items():
             query_string = urlencode({
-                "categories": value["code"],
+                "categories": category_id,
                 "token": self._token,
             })
             url = f"{self.PROJECTS_URL}?{query_string}"
@@ -90,7 +93,7 @@ class KworkSpider(scrapy.Spider):
                 callback=self.parse_projects,
                 headers=self.HEADERS,
                 meta={
-                    "category": category_code,
+                    "category": category["code"],
                 }
             )
 

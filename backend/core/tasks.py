@@ -67,6 +67,7 @@ def process_order_task(order):
             "order_created": order.get("order_created"),
             "category": category,
             "subcategory": subcategory,
+            "currency_symbol": order.get("currency_symbol"),
         },
     )
     if created:

@@ -13,9 +13,10 @@ class BaseProject(BaseModel):
     source: str
     offers: int
     order_created: int
-    subcategory: int
     url: str
-    category: Optional[int]
+    category: str
+    subcategory: str
+    currency_symbol: str
     price_max: Optional[int]
 
     def to_celery(self, task):
