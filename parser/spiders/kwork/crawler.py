@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from pydantic import Field, field_validator
 
-from spiders.kwork.constants import CATEGORIES, SUBCATEGORIES_REVERSE
+from spiders.kwork.constants import SUBCATEGORIES_REVERSE
 from spiders.models import ExtraMixin
 from spiders.utils import start_crawl
 
@@ -29,8 +29,8 @@ class Project(ExtraMixin):
     source: str = Field(default="kwork")
     offers: int
     order_created: int = Field(alias="date_confirm")
-    category: str
-    subcategory: str = Field(alias="category_id")
+    category: Optional[str] = None
+    subcategory: Optional[str] = Field(alias="category_id")
     currency_symbol: str
     price_max: Optional[int] = Field(alias="possible_price_limit")
 
@@ -81,21 +81,17 @@ class KworkSpider(scrapy.Spider):
         self._token = None
 
     def start_parsing(self):
-        for category_id, category in CATEGORIES.items():
-            query_string = urlencode({
-                "categories": category_id,
-                "token": self._token,
-            })
-            url = f"{self.PROJECTS_URL}?{query_string}"
-            yield scrapy.Request(
-                url=url,
-                method="POST",
-                callback=self.parse_projects,
-                headers=self.HEADERS,
-                meta={
-                    "category": category["code"],
-                }
-            )
+        query_string = urlencode({
+            "categories": "all",
+            "token": self._token,
+        })
+        url = f"{self.PROJECTS_URL}?{query_string}"
+        yield scrapy.Request(
+            url=url,
+            method="POST",
+            callback=self.parse_projects,
+            headers=self.HEADERS,
+        )
 
     def start_requests(self):
         self._token = redis_client.get("kwork_token")
@@ -122,10 +118,8 @@ class KworkSpider(scrapy.Spider):
         yield from self.start_parsing()
 
     def parse_projects(self, response):
-        category = response.meta.get("category")
 
         for row in response.json()["response"]:
-            row["category"] = category
             row["currency_symbol"] = self.CURRENCY_SYMBOL
             yield Project.parse_obj(row).dict()
 

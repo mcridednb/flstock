@@ -12,7 +12,7 @@ from loguru import logger
 from openai import OpenAI
 
 from backend.celery import app
-from core.models import Project, CategorySubscription, TelegramUser, Source, GPTPrompt, Category, Subcategory
+from core.models import Project, TelegramUser, Source, GPTPrompt, Category, Subcategory
 from core.utils import send_limit_exceeded_message, send_html_to_telegram, create_infographic
 
 
@@ -31,17 +31,6 @@ def process_order_task(order):
         logger.critical(f"Неизвестный источник: {source}")
         return
 
-    category = order.pop("category", None)
-    if not category:
-        logger.critical(f"Отсутствует категория: {category}")
-        return
-
-    try:
-        category = Category.objects.get(code=category)
-    except Exception as exc:
-        logger.critical(f"Неизвестная категория: {category}")
-        return
-
     subcategory = order.pop("subcategory", None)
     if not subcategory:
         logger.critical(f"Отсутствует подкатегория: {subcategory}")
@@ -51,6 +40,16 @@ def process_order_task(order):
         subcategory = Subcategory.objects.get(code=subcategory)
     except Exception as exc:
         logger.critical(f"Неизвестная подкатегория: {subcategory}")
+        return
+
+    category = order.pop("category", None)
+    if not category:
+        category = subcategory.category.code
+
+    try:
+        category = Category.objects.get(code=category)
+    except Exception as exc:
+        logger.critical(f"Неизвестная категория: {category}")
         return
 
     project, created = Project.objects.get_or_create(
@@ -83,18 +82,20 @@ def send_project_task(project_id):
     time_diff = now() - order_created_datetime
     minutes_ago = int(time_diff.total_seconds() / 60)
 
-    title = html2text.html2text(project.title).strip()
+    title = html2text.html2text(project.title).strip().capitalize()
     description = html2text.html2text(project.description).strip()
 
-    price_text = ""
-    if project.price and project.price_max:
-        price_text = f"от {int(project.price)} до {int(project.price_max)} "
-    elif project.price:
-        price_text = f"{int(project.price)} "
-    elif project.price_max:
-        price_text = f"{int(project.price_max)} "
+    price_text = "Не указана"
+    if project.price:
+        price_text = ""
+        if project.price and project.price_max:
+            price_text = f"от {int(project.price)} до {int(project.price_max)} "
+        elif project.price:
+            price_text = f"{int(project.price)} "
+        elif project.price_max:
+            price_text = f"{int(project.price_max)} "
 
-    price_text += project.currency_symbol
+        price_text += project.currency_symbol
 
     gpt_prompt = GPTPrompt.objects.filter(
         category=project.category,

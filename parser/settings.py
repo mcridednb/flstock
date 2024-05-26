@@ -115,6 +115,11 @@ KWORK_LOGIN = os.getenv("KWORK_LOGIN")
 KWORK_PASSWORD = os.getenv("KWORK_PASSWORD")
 KWORK_PHONE_LAST = os.getenv("KWORK_PHONE_LAST")
 
+# FL
+FL_LOGIN = os.getenv("FL_LOGIN")
+FL_PASSWORD = os.getenv("FL_PASSWORD")
+FL_CLIENT_ID = os.getenv("FL_CLIENT_ID")
+
 # MongoDB
 MONGO_URI = os.getenv("MONGO_URI")
 

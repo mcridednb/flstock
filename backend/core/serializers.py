@@ -89,7 +89,7 @@ class CategorySubscriptionSerializer(serializers.ModelSerializer):
 
         exist = CategorySubscription.objects.filter(user=user, subcategory=subcategory)
         if not exist and CategorySubscription.objects.filter(user=user).count() >= 3:
-            raise ValidationError("🚫 К сожалению, вы не можете задать больше 3-х категорий.")
+            raise ValidationError("🚫 Вы не можете указать больше 3-х категорий.")
 
         try:
             subscription, created = CategorySubscription.objects.update_or_create(

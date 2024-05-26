@@ -7,15 +7,15 @@ from pydantic import BaseModel
 
 class BaseProject(BaseModel):
     project_id: int
-    price: int
+    price: Optional[int]
     title: str
     description: str
     source: str
     offers: int
     order_created: int
     url: str
-    category: str
-    subcategory: str
+    category: Optional[str]
+    subcategory: Optional[str]
     currency_symbol: str
     price_max: Optional[int]
 

@@ -502,7 +502,7 @@ async def process_change_stop_words(callback_query: CallbackQuery, state: FSMCon
     stop_words = data["stop_words"]
     await state.set_state(Profile.stop_words)
     await callback_query.message.edit_text(
-        f"*Ваши минус-слова:* `{stop_words}`\n\n"
+        f"*Ваши минус-слова (нажмите, чтобы скопировать):* `{stop_words}`\n\n"
         "⚠️ Пожалуйста, помните, что строка не должна превышать 2048 символов.\n\n"
         "✍️ *Введите минус-слова:*",
         parse_mode="Markdown"
