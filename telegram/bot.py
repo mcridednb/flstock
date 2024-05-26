@@ -132,7 +132,7 @@ async def send_welcome(message: Message, state: FSMContext):
         await state.clear()
         keyboard = await get_menu_keyboard()
         await message.answer(
-            text="📋 *Выберите действие, которое хотите выполнить::*",
+            text="📋 *Выберите действие, которое хотите выполнить:*",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
