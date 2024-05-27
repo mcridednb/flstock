@@ -82,7 +82,9 @@ def send_project_task(project_id):
     time_diff = now() - order_created_datetime
     minutes_ago = int(time_diff.total_seconds() / 60)
 
-    title = html2text.html2text(project.title).strip().capitalize()
+    title = html2text.html2text(project.title).strip()
+    title = title.split()
+    title = f"{title[0].capitalize()} {' '.join(title[1:])}"
     description = html2text.html2text(project.description).strip()
 
     price_text = "Не указана"
