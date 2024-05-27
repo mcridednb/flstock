@@ -178,8 +178,8 @@ class TelegramUser(models.Model):
         limit_pro = 0
 
         if self.user_subscription:
-            limit_base += self.user_subscription.subscription.gpt.get(model__code=base).limit,
-            limit_pro += self.user_subscription.subscription.gpt.get(model__code=pro).limit,
+            limit_base += self.user_subscription.subscription.gpt.get(model__code=base).limit
+            limit_pro += self.user_subscription.subscription.gpt.get(model__code=pro).limit
 
         return {
             base: limit_base,
