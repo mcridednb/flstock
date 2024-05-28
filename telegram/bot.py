@@ -125,8 +125,39 @@ async def on_startup(dispatcher: Dispatcher):
     pass
 
 
+def check(member):
+    return member.status != "left"
+
+
+async def check_channels(user_id):
+    buttons = []
+    if not check(await bot.get_chat_member("-1002216378515", user_id)):
+        buttons.append([types.InlineKeyboardButton(
+            text="Новости нашего проекта", url="https://t.me/freelancerai_info"
+        )])
+
+    if buttons:
+        me = await bot.get_me()
+        buttons.append([InlineKeyboardButton(
+            text="✅ Проверить", url=f"https://t.me/{me.username}?start="
+        )])
+
+        await bot.send_message(
+            user_id,
+            "Для работы с ботом нужно подписаться на:",
+            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=buttons)
+        )
+        return
+
+    return True
+
+
 @dp.message(Command("start"))
 async def send_welcome(message: Message, state: FSMContext):
+    result = await check_channels(message.from_user.id)
+    if not result:
+        return
+
     response, _ = await api.user_create(message)
     if not response.get("username"):
         await state.clear()
@@ -153,6 +184,17 @@ async def send_welcome(message: Message, state: FSMContext):
 async def process_close(callback_query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await callback_query.message.delete()
+
+
+@dp.callback_query(lambda call: call.data == "check_subscription")
+async def process_check_subscription(callback_query: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+
+    result = await check_channels(callback_query.from_user.id)
+    if not result:
+        return
+
+    await send_welcome(callback_query.message, state)
 
 
 @dp.callback_query(lambda call: call.data == "back")
@@ -189,6 +231,10 @@ async def process_back(callback_query: CallbackQuery, state: FSMContext) -> None
 
 @dp.message(Command("menu"))
 async def process_menu(message: Message, state: FSMContext) -> None:
+    result = await check_channels(message.from_user.id)
+    if not result:
+        return
+
     await state.clear()
     keyboard = await get_menu_keyboard()
     await message.answer(
@@ -557,6 +603,7 @@ async def analyze_order_pro_ai(callback_query: CallbackQuery):
         "pro"
     )
     await callback_query.answer(f'Проект отправлен на анализ PRO AI')
+
 
 # @dp.message(Command("projects"))
 # async def send_projects(message: Message, state: FSMContext):

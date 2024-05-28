@@ -117,10 +117,10 @@ def send_project_task(project_id):
         keyboard["inline_keyboard"].append(
             [{"text": "🤖 Проанализировать заказ (AI)", "callback_data": f"analyze_order_ai:{project.id}"}],
         )
-    # if gpt_prompt.count() > 1:
-    #     keyboard["inline_keyboard"].append(
-    #         [{"text": "🧠 Проанализировать заказ (PRO AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
-    #     )
+    if gpt_prompt.count() > 1:
+        keyboard["inline_keyboard"].append(
+            [{"text": "🧠 Проанализировать заказ (PRO AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
+        )
 
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendPhoto"
