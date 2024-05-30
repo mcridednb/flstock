@@ -72,6 +72,18 @@ def process_order_task(order):
         send_project_task.delay(project.id)
 
 
+def check_words(words, title, description):
+    if not words:
+        return False
+
+    words = [word.strip().lower() for word in words.split(",")]
+    for word in words:
+        if word in title.lower() or word in description.lower():
+            return True
+
+    return False
+
+
 @app.task(name="send_project_task")
 def send_project_task(project_id):
     project = Project.objects.get(id=project_id)
@@ -106,20 +118,20 @@ def send_project_task(project_id):
         category=project.category,
     )
 
-    users = TelegramUser.objects.filter(subscriptions__subcategory=project.subcategory).distinct()
+    users = TelegramUser.objects.filter(
+        category_subscriptions__subcategory=project.subcategory,
+        source_subscriptions__source=project.source,
+    ).distinct()
 
     keyboard = {
         "inline_keyboard": [
             [{"text": "📋 Перейти к заказу", "url": project.url}],
         ]
     }
+
     if gpt_prompt:
         keyboard["inline_keyboard"].append(
-            [{"text": "🤖 Проанализировать заказ (AI)", "callback_data": f"analyze_order_ai:{project.id}"}],
-        )
-    if gpt_prompt.count() > 1:
-        keyboard["inline_keyboard"].append(
-            [{"text": "🧠 Проанализировать заказ (PRO AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
+            [{"text": "🤖Проанализировать заказ (AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
         )
 
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
@@ -134,15 +146,14 @@ def send_project_task(project_id):
     )
 
     for user in users:
-        if user.stop_words:
-            stop = False
+        if user.stop_words and user.stop_words.strip():
+            has_stop_word = check_words(user.stop_words.strip(), title, description)
+            if has_stop_word:
+                continue
 
-            stop_words = [word.strip().lower() for word in user.stop_words.split(",")]
-            for stop_word in stop_words:
-                if stop_word in title.lower() or stop_word in description.lower():
-                    stop = True
-
-            if stop:
+        if user.keywords and user.keywords.strip():
+            has_keyword = check_words(user.keywords.strip(), title, description)
+            if not has_keyword:
                 continue
 
         if len(description) > 350:

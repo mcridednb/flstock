@@ -6,13 +6,15 @@ from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.views import APIView
 
-from core.models import Category, CategorySubscription, TelegramUser, Project, Subcategory
+from core.models import Category, CategorySubscription, TelegramUser, Project, Subcategory, SourceSubscription, Source
 from core.serializers import (
     TelegramUserSerializer,
     CategorySerializer,
     SubcategorySerializer,
     CategorySubscriptionSerializer,
     ProjectSerializer,
+    SourceSubscriptionSerializer,
+    SourceSerializer,
 )
 from core.tasks import gpt_request
 
@@ -34,6 +36,16 @@ class TelegramUserDetail(generics.RetrieveUpdateAPIView):
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["chat_id"] = self.request.query_params.get("chat_id")
+        return context
+
+
+class SourceListView(generics.ListAPIView):
+    queryset = Source.objects.all()
+    serializer_class = SourceSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -92,3 +104,8 @@ class ProjectAnalyzeView(APIView):
         gpt_request.delay(project.id, message_id, chat_id, gpt_model_id)
 
         return JsonResponse({"detail": "Analysis task has been queued."}, status=status.HTTP_202_ACCEPTED)
+
+
+class SourceSubscriptionView(generics.CreateAPIView):
+    queryset = SourceSubscription.objects.all()
+    serializer_class = SourceSubscriptionSerializer

@@ -3,7 +3,7 @@ from io import BytesIO
 
 import pdfkit
 import requests
-from PIL import Image, ImageFont
+from PIL import Image, ImageFont, ImageDraw
 from django.conf import settings
 from django.template.loader import render_to_string
 from pilmoji import Pilmoji
@@ -26,9 +26,9 @@ def wrap_text(text, font, max_width):
 
 def create_infographic(title, price_text, source, offers, minutes_ago, subcategory):
     font_path = FONT_PATH
-    title_font_size = 80
+    title_font_size = 75
     title_font = ImageFont.truetype(font_path, title_font_size)
-    price_font = ImageFont.truetype(font_path, 40)
+    price_font = ImageFont.truetype(font_path, 36)
     logo_font = ImageFont.truetype(font_path, 50)
     text_font = ImageFont.truetype(font_path, 30)
     breadcrumbs = ImageFont.truetype(font_path, 30)
@@ -40,16 +40,21 @@ def create_infographic(title, price_text, source, offers, minutes_ago, subcatego
 
     img = Image.new('RGB', (1200, img_height), color=(0, 0, 0))
 
+    temp_img = Image.new('RGBA', img.size, (255, 255, 255, 0))
+    temp_draw = ImageDraw.Draw(temp_img)
+    temp_draw.text((1150, 50), "Фрилансер", font=logo_font, fill=(255, 255, 255, 90), anchor="ra")
+    current_height = 250
+    for line in wrapped_title:
+        temp_draw.text((50, current_height), line, (255, 255, 255), font=title_font)
+        current_height += title_font_size + 10
+    temp_draw.text((1150, current_height + 200), "@freelancerai_bot", (255, 255, 255, 90), font=text_font, anchor="ra")
+
+    img = Image.alpha_composite(img.convert('RGBA'), temp_img)
+
     with Pilmoji(img, source=AppleEmojiSource) as pilmoji:
-        pilmoji.text((50, 50), source, (255, 255, 255), font=logo_font)
-        pilmoji.text((1150, 50), "Фрилансер", (255, 255, 255), font=logo_font, anchor="ra")
+        pilmoji.text((50, 50), source, (160, 225, 68), font=logo_font)
 
-        pilmoji.text((55, 200), subcategory, (255, 255, 255), font=breadcrumbs)
-
-        current_height = 250
-        for line in wrapped_title:
-            pilmoji.text((50, current_height), line, (255, 255, 255), font=title_font)
-            current_height += title_font_size + 10
+        pilmoji.text((55, 200), f"> {subcategory}", (255, 255, 255), font=breadcrumbs)
 
         pilmoji.text((50, current_height + 20), f"💰{price_text}", (255, 255, 255), font=price_font)
 

@@ -148,3 +148,16 @@ REDIS_PORT = os.getenv("REDIS_PORT")
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+USER_AGENT = os.getenv("USER_AGENT")
+ACCEPT = (
+    "text/html,application/xhtml+xml,application/xml;q=0.9,"
+    "image/avif,image/webp,image/apng,*/*;q=0.8,"
+    "application/signed-exchange;v=b3;q=0.7"
+)
+DEFAULT_REQUEST_HEADERS = {
+    "Accept": ACCEPT,
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "en-US,en;q=0.5",
+    "User-Agent": USER_AGENT,
+}

@@ -170,6 +170,7 @@ class TelegramUser(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     stop_words = models.CharField(max_length=2048, null=True, blank=True)
+    keywords = models.CharField(max_length=2048, null=True, blank=True)
 
     def get_limits(self):
         base = "gpt-3.5-turbo"
@@ -195,18 +196,18 @@ class TelegramUser(models.Model):
 
 
 class CategorySubscription(models.Model):
-    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="subscriptions")
+    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="category_subscriptions")
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
-        related_name="user_subscriptions",
+        related_name="category_subscriptions",
         blank=True,
         null=True,
     )
     subcategory = models.ForeignKey(
         Subcategory,
         on_delete=models.CASCADE,
-        related_name="user_subscriptions",
+        related_name="category_subscriptions",
         blank=True,
         null=True,
     )
@@ -226,3 +227,20 @@ class CategorySubscription(models.Model):
 
     def __str__(self):
         return f"{self.user} -> {self.subcategory.title if self.subcategory else self.category.title}"
+
+
+class SourceSubscription(models.Model):
+    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="source_subscriptions")
+    source = models.ForeignKey(
+        Source,
+        on_delete=models.CASCADE,
+        related_name="source_subscriptions",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        unique_together = ("user", "source")
+
+    def __str__(self):
+        return f"{self.user} -> {self.source.title}"
