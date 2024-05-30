@@ -1,4 +1,5 @@
 import io
+import json
 from io import BytesIO
 
 import pdfkit
@@ -68,65 +69,3 @@ def create_infographic(title, price_text, source, offers, minutes_ago, subcatego
     buffer.seek(0)
 
     return buffer.getvalue()
-
-
-def create_pdf_file(response, template_name):
-    html_content = render_to_string(template_name, {'response': response})
-    options = {
-        'encoding': 'UTF-8'
-    }
-    pdf_buffer = pdfkit.from_string(html_content, False, options=options)
-    buffer = io.BytesIO(pdf_buffer)
-    buffer.seek(0)
-    return buffer
-
-
-def send_html_to_telegram(chat_id, message_id, response, template_name):
-    pdf_buffer = create_pdf_file(response, template_name)
-    files = {
-        'document': (f'report.pdf', pdf_buffer, 'application/pdf')
-    }
-    data = {
-        'chat_id': chat_id,
-        'text': response["response"],
-        'parse_mode': 'Markdown',
-        'reply_to_message_id': message_id,
-    }
-    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendDocument"
-    response = requests.post(url, data=data, files=files)
-    return response.json()
-
-
-def send_limit_exceeded_message(chat_id, message_id, is_pro: bool):
-    text = (
-        "🚫 Дневной лимит на анализ данного типа превышен.\n"
-        "Лимиты сбрасываются каждый день в 00:00 по МСК."
-    )
-    # keyboard = []
-    # if not is_pro:
-    #     keyboard.append([
-    #         {
-    #             'text': '🛒 Купить подписку',
-    #             'callback_data': 'get_subscribe'
-    #         }
-    #     ])
-    # else:
-    #     keyboard.append([
-    #         {
-    #             'text': 'ℹ️ Подробнее о лимитах',
-    #             'callback_data': 'limit_info'
-    #         }
-    #     ])
-    # keyboard = {
-    #     'inline_keyboard': keyboard
-    # }
-    data = {
-        'chat_id': chat_id,
-        'text': text,
-        'parse_mode': 'Markdown',
-        'reply_to_message_id': message_id,
-        # 'reply_markup': keyboard
-    }
-    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
-    response = requests.post(url, json=data)
-    return response.json()

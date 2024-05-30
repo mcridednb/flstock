@@ -4,16 +4,14 @@ from io import BytesIO
 
 import html2text
 import pytz
-import redis
 import requests
 from django.conf import settings
 from django.utils.timezone import now
 from loguru import logger
-from openai import OpenAI
 
 from backend.celery import app
-from core.models import Project, TelegramUser, Source, GPTPrompt, Category, Subcategory
-from core.utils import send_limit_exceeded_message, send_html_to_telegram, create_infographic
+from core.models import Project, TelegramUser, Source, GPTPrompt, Category, Subcategory, GPTRequest
+from core.utils import create_infographic
 
 
 @app.task
@@ -178,17 +176,7 @@ def send_project_task(project_id):
 
 
 @app.task(name="gpt_request")
-def gpt_request(project_id, message_id, chat_id, gpt_model_id):
-    redis_client = redis.StrictRedis(
-        host=settings.REDIS_HOST,
-        port=settings.REDIS_PORT,
-        db=1,
-    )
-
-    def get_gpt_model_count(chat_id, gpt_model_id):
-        count = redis_client.hget(chat_id, gpt_model_id)
-        return int(count) if count else 0
-
+def gpt_request(project_id, message_id, chat_id, additional_info):
     project = Project.objects.get(id=project_id)
 
     try:
@@ -197,61 +185,24 @@ def gpt_request(project_id, message_id, chat_id, gpt_model_id):
         ...  # отправить сообщение что что-то пошло не так
         return
 
-    limits = user.get_limits()
-    if get_gpt_model_count(chat_id, gpt_model_id) >= limits[gpt_model_id]:
-        send_limit_exceeded_message(chat_id, message_id, bool(user.user_subscription))
-        return
-
     prompt = GPTPrompt.objects.get(
-        model__code=gpt_model_id,
+        model__code="gpt-4o",
         category=project.category,
     )
-    request = prompt.text.format(
-        name=user.name,
-        summary=user.summary,
-        skills=user.skills,
-        experience=user.experience,
-        title=project.title,
-        description=project.description,
-        price=project.price,
-        price_max=project.price_max,
-    ) + "\n" + str(prompt.json_format)
-
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-    messages = [
-        {"role": "user", "content": request}
-    ]
-
-    completion = client.chat.completions.create(
-        model=gpt_model_id,
-        response_format={"type": "json_object"},
-        messages=messages,
-    )
-    response_content = completion.choices[0].message.content
-    response_json = json.loads(response_content)
-
-    redis_client.hincrby(chat_id, gpt_model_id, 1)
-
-    total_hours = sum(stage["time"] for stage in response_json["stages"])
-    potential_price = total_hours * user.hourly_rate if user.hourly_rate else None
-
-    template_name = f"{project.category.code}_report.html"
-    response_json["hourly_rate"] = user.hourly_rate
-    response_json["project_title"] = html2text.html2text(project.title).strip()
-    response_json["project_description"] = html2text.html2text(project.description).strip()
-    response_json["total_hours"] = total_hours
-    response_json["potential_price"] = potential_price
-    send_html_to_telegram(user.chat_id, message_id, response_json, template_name)
-
+    GPTRequest.objects.create(
+        prompt=prompt,
+        user=user,
+        project=project,
+        additional_info=additional_info,
+    ).send_user_response(message_id)
 
 # celery -A backend worker --loglevel=info
 # celery -A backend beat --loglevel=info
-@app.task(name="clean_gpt_limits")
-def clean_gpt_limits():
-    redis_client = redis.StrictRedis(
-        host=settings.REDIS_HOST,
-        port=settings.REDIS_PORT,
-        db=1,
-    )
-    redis_client.flushdb()
+# @app.task(name="clean_gpt_limits")
+# def clean_gpt_limits():
+#     redis_client = redis.StrictRedis(
+#         host=settings.REDIS_HOST,
+#         port=settings.REDIS_PORT,
+#         db=1,
+#     )
+#     redis_client.flushdb()

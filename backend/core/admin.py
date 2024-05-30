@@ -4,7 +4,7 @@ from jsoneditor.forms import JSONEditor
 
 from core.models import (
     Subscription, TelegramUser, Project, Category, Subcategory, CategorySubscription,
-    Source, SourceCategory, GPTPrompt, SubscriptionGPTLimits, GPTModel, UserSubscription,
+    Source, SourceCategory, GPTPrompt, GPTModel, UserSubscription,
     SourceSubscription,
 )
 
@@ -63,13 +63,9 @@ class GPTPromptAdmin(admin.ModelAdmin):
     # }
 
 
-class SubscriptionGPTLimitsAdmin(admin.TabularInline):
-    model = SubscriptionGPTLimits
-
-
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    inlines = [SubscriptionGPTLimitsAdmin, ]
+    pass
 
 
 @admin.register(UserSubscription)

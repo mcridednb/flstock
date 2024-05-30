@@ -161,7 +161,7 @@ async def get_change_profile_keyboard():
         [types.InlineKeyboardButton(text="⏰ Ставка в час", callback_data="change_hourly_rate")],
         [types.InlineKeyboardButton(text="🏷 Ключевые слова", callback_data="change_keywords")],
         [types.InlineKeyboardButton(text="⛔️ Минус слова", callback_data="change_stop_words")],
-        # [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_subscription")],
+        [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_subscription")],
         [types.InlineKeyboardButton(text="❌ Закрыть", callback_data="close")]
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)

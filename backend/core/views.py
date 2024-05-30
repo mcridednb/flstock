@@ -97,11 +97,12 @@ class ProjectAnalyzeView(APIView):
         chat_id = request.data.get("chat_id")
         gpt_model_id = request.data.get("model")
         message_id = request.data.get("message_id")
+        additional_info = request.data.get("additional_info")
 
         if not chat_id or not gpt_model_id:
             return JsonResponse({"detail": "chat_id and model are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        gpt_request.delay(project.id, message_id, chat_id, gpt_model_id)
+        gpt_request.delay(project.id, message_id, chat_id, gpt_model_id, additional_info)
 
         return JsonResponse({"detail": "Analysis task has been queued."}, status=status.HTTP_202_ACCEPTED)
 

@@ -1,6 +1,15 @@
+import io
+import json
+
+import html2text
+import pdfkit
+import requests
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
+from openai import OpenAI
 
 
 class Source(models.Model):
@@ -112,7 +121,7 @@ class GPTPrompt(models.Model):
     model = models.ForeignKey(GPTModel, on_delete=models.PROTECT, related_name="prompts")
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
     text = models.TextField()
-    json_format = models.JSONField()
+    response_format = models.JSONField()
 
     class Meta:
         unique_together = ("model", "category")
@@ -126,6 +135,8 @@ class GPTPrompt(models.Model):
 class Subscription(models.Model):
     title = models.CharField("Название", max_length=255)
     price = models.IntegerField("Цена")
+    days_count = models.IntegerField(default=30)
+    gpt_request_limit = models.IntegerField(default=5)
 
     def __str__(self):
         return self.title
@@ -133,19 +144,6 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = "Тарифный план"
         verbose_name_plural = "Тарифные планы"
-
-
-class SubscriptionGPTLimits(models.Model):
-    subscription = models.ForeignKey(Subscription, on_delete=models.PROTECT, related_name="gpt")
-    model = models.ForeignKey(GPTModel, on_delete=models.PROTECT)
-    limit = models.IntegerField()
-
-    def __str__(self):
-        return f"{self.subscription}:{self.model} -> {self.limit}"
-
-    class Meta:
-        verbose_name = "GPT-ограничение"
-        verbose_name_plural = "GPT-ограничения"
 
 
 class UserSubscription(models.Model):
@@ -172,20 +170,7 @@ class TelegramUser(models.Model):
     stop_words = models.CharField(max_length=2048, null=True, blank=True)
     keywords = models.CharField(max_length=2048, null=True, blank=True)
 
-    def get_limits(self):
-        base = "gpt-3.5-turbo"
-        pro = "gpt-4o"
-        limit_base = 1
-        limit_pro = 0
-
-        if self.user_subscription:
-            limit_base += self.user_subscription.subscription.gpt.get(model__code=base).limit
-            limit_pro += self.user_subscription.subscription.gpt.get(model__code=pro).limit
-
-        return {
-            base: limit_base,
-            pro: limit_pro,
-        }
+    gpt_request_limit = models.PositiveIntegerField(default=2)
 
     def __str__(self):
         return f"{self.name or 'Не представился'} (ID: {self.chat_id})"
@@ -211,6 +196,7 @@ class CategorySubscription(models.Model):
         blank=True,
         null=True,
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "category", "subcategory")
@@ -238,9 +224,149 @@ class SourceSubscription(models.Model):
         blank=True,
         null=True,
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "source")
 
     def __str__(self):
         return f"{self.user} -> {self.source.title}"
+
+
+class GPTRequest(models.Model):
+    class StatusChoices(models.TextChoices):
+        ACCEPTED = "accepted", _("Принят")
+        COMPLETED = "completed", _("Выполнен")
+        DELIVERED = "delivered", _("Отправлен пользователю")
+
+    status = models.CharField(
+        max_length=10,
+        choices=StatusChoices.choices,
+        default=StatusChoices.ACCEPTED,
+    )
+
+    prompt = models.ForeignKey(GPTPrompt, on_delete=models.CASCADE, related_name="gpt_requests")
+    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="gpt_requests")
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="gpt_requests")
+    name = models.CharField(max_length=255, blank=True, null=True)
+    skills = models.CharField(max_length=512, blank=True, null=True)
+    summary = models.CharField(max_length=1024, blank=True, null=True)
+    experience = models.CharField(max_length=1024, blank=True, null=True)
+    hourly_rate = models.IntegerField(blank=True, null=True)
+    additional_info = models.CharField(max_length=2048, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def _generate_gpt_request(self):
+        self.name = self.user.name
+        self.skills = self.user.skills
+        self.summary = self.user.summary
+        self.experience = self.user.experience
+        self.hourly_rate = self.user.hourly_rate
+        self.save()
+
+        return self.prompt.text.format(
+            name=self.user.name,
+            skills=self.user.skills,
+            summary=self.user.summary,
+            experience=self.user.experience,
+            additional_info=self.additional_info,
+            title=self.project.title,
+            description=self.project.description,
+            price=self.project.price,
+            price_max=self.project.price_max,
+        ) + "\n" + str(self.prompt.response_format)
+
+    def _openai_request(self):
+        request_text = self._generate_gpt_request()
+
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        messages = [
+            {"role": "user", "content": request_text}
+        ]
+
+        completion = client.chat.completions.create(
+            model=self.prompt.model.code,
+            response_format={"type": "json_object"},
+            messages=messages,
+        )
+        response_content = completion.choices[0].message.content
+        return json.loads(response_content)
+
+    @property
+    def _template_name(self):
+        return f"{self.project.category.code}_report.html"
+
+    def _generate_pdf(self):
+        response = self._openai_request()
+
+        total_hours = sum(stage["time"] for stage in response["stages"])
+        potential_price = total_hours * self.hourly_rate if self.hourly_rate else None
+
+        response["hourly_rate"] = self.hourly_rate
+        response["project_title"] = html2text.html2text(self.project.title).strip()
+        response["project_description"] = html2text.html2text(self.project.description).strip()
+        response["total_hours"] = total_hours
+        response["potential_price"] = potential_price
+        response["additional_info"] = self.additional_info
+
+        html_content = render_to_string(self._template_name, {'response': response})
+        options = {
+            'encoding': 'UTF-8'
+        }
+        pdf_buffer = pdfkit.from_string(html_content, False, options=options)
+        buffer = io.BytesIO(pdf_buffer)
+        buffer.seek(0)
+        return response, buffer
+
+    def _send_limit_exceeded_message(self, message_id):
+        keyboard = json.dumps({
+            "inline_keyboard": [[{
+                "text": "💳 Купить запросы",
+                "callback_data": "buy_gpt_requests"
+            }]]
+        })
+
+        data = {
+            'chat_id': self.user.chat_id,
+            'text': (
+                "🚫 *Достигнут лимит запросов.*\n\n"
+                "Нажмите на кнопку ниже, чтобы купить больше запросов."
+            ),
+            'parse_mode': 'Markdown',
+            'reply_to_message_id': message_id,
+            'reply_markup': keyboard
+        }
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+        response = requests.post(url, json=data)
+        return response.json()
+
+    def send_user_response(self, message_id):
+        if self.user.gpt_request_limit <= 0:
+            self._send_limit_exceeded_message(message_id)
+            return
+
+        response, pdf_buffer = self._generate_pdf()
+        files = {
+            'document': (f'report.pdf', pdf_buffer, 'application/pdf')
+        }
+
+        keyboard = {
+            "inline_keyboard": [
+                [{"text": "⚠️ Пожаловаться", "callback_data": f"complain:{self.id}"}]
+            ]
+        }
+        keyboard_json = json.dumps(keyboard)
+
+        data = {
+            'chat_id': self.user.chat_id,
+            'text': response["response"],
+            'parse_mode': 'Markdown',
+            'reply_to_message_id': message_id,
+            'reply_markup': keyboard_json,
+        }
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendDocument"
+        response = requests.post(url, data=data, files=files)
+        self.user.gpt_request_limit -= 1
+        self.user.save()
+        return response.json()
