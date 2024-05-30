@@ -229,7 +229,7 @@ services:
     env_file:
       - .env
     ports:
-      - 8000:8000
+      - "8000:8000"
     volumes:
       - ./backend:/app
     depends_on:
@@ -258,6 +258,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
     command: python bot.py
     env_file:
       - .env
