@@ -74,7 +74,11 @@ services:
       interval: 5s
       timeout: 30s
       retries: 50
-    restart: always
+    volumes:
+      - ./docker_volumes/redis-data:/data
+      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+
 
   postgres_airflow:
     image: postgres:latest
