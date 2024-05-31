@@ -83,17 +83,15 @@ async def projects_detail(project_id):
     return await api_call(hdrs.METH_GET, endpoint)
 
 
-async def projects_analyze(project_id, chat_id, message_id, model):
-    model_map = {
-        "base": "gpt-3.5-turbo",
-        "pro": "gpt-4o"
-    }
+async def projects_analyze(
+    project_id, chat_id, message_id, delete_message_id, additional_info=None
+):
     endpoint = urljoin("projects/", str(project_id) + "/")
     endpoint = urljoin(endpoint, "analyze")
     data = {
-        "model": model_map[model],
         "chat_id": chat_id,
         "message_id": message_id,
+        "delete_message_id": delete_message_id,
     }
     return await api_call(hdrs.METH_POST, endpoint, json=data)
 

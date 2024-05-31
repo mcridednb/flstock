@@ -129,7 +129,7 @@ def send_project_task(project_id):
 
     if gpt_prompt:
         keyboard["inline_keyboard"].append(
-            [{"text": "🤖Проанализировать заказ (AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
+            [{"text": "🤖 Проанализировать заказ (AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
         )
 
     keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
@@ -175,16 +175,42 @@ def send_project_task(project_id):
     project.save()
 
 
-@app.task(name="gpt_request")
-def gpt_request(project_id, message_id, chat_id, additional_info):
-    project = Project.objects.get(id=project_id)
+def send_limit_exceeded_message(chat_id, message_id, delete_message_id):
+    keyboard = json.dumps({
+        "inline_keyboard": [[{
+            "text": "🤖 Купить AI-запросы",
+            "callback_data": f"buy_gpt_requests:{message_id}"
+        }]]
+    })
 
+    data = {
+        'chat_id': chat_id,
+        'message_id': delete_message_id,
+        'text': (
+            "🚫 *Достигнут лимит запросов.*\n\n"
+            "Нажмите на кнопку ниже, чтобы купить больше запросов."
+        ),
+        'parse_mode': 'Markdown',
+        'reply_markup': keyboard
+    }
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/editMessageText"
+    response = requests.post(url, json=data)
+    return response.json()
+
+
+@app.task(name="gpt_request")
+def gpt_request(project_id, message_id, delete_message_id, chat_id, additional_info):
     try:
         user = TelegramUser.objects.get(chat_id=chat_id)
     except TelegramUser.DoesNotExist as exc:
         ...  # отправить сообщение что что-то пошло не так
         return
 
+    if user.gpt_request_limit <= 0:
+        send_limit_exceeded_message(user.chat_id, message_id, delete_message_id)
+        return
+
+    project = Project.objects.get(id=project_id)
     prompt = GPTPrompt.objects.get(
         model__code="gpt-4o",
         category=project.category,
@@ -194,7 +220,7 @@ def gpt_request(project_id, message_id, chat_id, additional_info):
         user=user,
         project=project,
         additional_info=additional_info,
-    ).send_user_response(message_id)
+    ).send_user_response(message_id, delete_message_id)
 
 # celery -A backend worker --loglevel=info
 # celery -A backend beat --loglevel=info

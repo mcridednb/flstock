@@ -7,7 +7,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.redis import RedisStorage
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 from dotenv import load_dotenv
@@ -132,7 +132,7 @@ async def get_close_keyboard():
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-async def get_menu_keyboard():
+async def get_menu_keyboard(message_id):
     buttons = [[types.InlineKeyboardButton(
         text="👤 Редактировать профиль",
         callback_data="profile",
@@ -142,13 +142,16 @@ async def get_menu_keyboard():
     )], [types.InlineKeyboardButton(
         text="📝 Редактировать категории",
         callback_data="categories",
-    )], [types.InlineKeyboardButton(
-        text="❤️ Поддержать проект",
-        callback_data="donate",
-    )], [types.InlineKeyboardButton(
-        text="❌ Закрыть",
-        callback_data="close",
-    )]]
+    )],
+        [types.InlineKeyboardButton(text="🤖 Купить AI-запросы", callback_data=f"buy_gpt_requests:{message_id}")],
+        [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data=f"buy_subscription:{message_id}")],
+        [types.InlineKeyboardButton(
+            text="❤️ Поддержать проект",
+            callback_data="donate",
+        )], [types.InlineKeyboardButton(
+            text="❌ Закрыть",
+            callback_data="close",
+        )]]
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -161,8 +164,25 @@ async def get_change_profile_keyboard():
         [types.InlineKeyboardButton(text="⏰ Ставка в час", callback_data="change_hourly_rate")],
         [types.InlineKeyboardButton(text="🏷 Ключевые слова", callback_data="change_keywords")],
         [types.InlineKeyboardButton(text="⛔️ Минус слова", callback_data="change_stop_words")],
-        [types.InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_subscription")],
         [types.InlineKeyboardButton(text="❌ Закрыть", callback_data="close")]
+    ]
+    return types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+async def get_buy_gpt_requests_keyboard():
+    buttons = [
+        [types.InlineKeyboardButton(text="10 запросов — 199₽", callback_data=f"buy_gpt_requests:10")],
+        [types.InlineKeyboardButton(text="50 запросов + 1 PRO — 890₽", callback_data=f"buy_gpt_requests:50")],
+        [types.InlineKeyboardButton(text="100 запросов + 3 PRO — 1580₽ ", callback_data=f"buy_gpt_requests:100")],
+    ]
+    return types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+async def get_buy_subscription_keyboard():
+    buttons = [
+        [types.InlineKeyboardButton(text="1 месяц — 199₽", callback_data=f"buy_subscription:1")],
+        [types.InlineKeyboardButton(text="3 месяца + 10 AI — 490₽", callback_data=f"buy_subscription:3")],
+        [types.InlineKeyboardButton(text="6 месяцев + 30 AI — 890₽ ", callback_data=f"buy_subscription:6")],
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -207,7 +227,7 @@ async def send_welcome(message: Message, state: FSMContext):
     response, _ = await api.user_create(message)
     if not response.get("username"):
         await state.clear()
-        keyboard = await get_menu_keyboard()
+        keyboard = await get_menu_keyboard(message.message_id)
         await message.answer(
             text="📋 *Выберите действие, которое хотите выполнить:*",
             reply_markup=keyboard,
@@ -266,7 +286,7 @@ async def process_back(callback_query: CallbackQuery, state: FSMContext) -> None
         )
     else:
         await state.clear()
-        keyboard = await get_menu_keyboard()
+        keyboard = await get_menu_keyboard(callback_query.message.message_id)
         await callback_query.message.edit_text(
             text="📋 *Выберите действие, которое хотите выполнить:*",
             reply_markup=keyboard,
@@ -281,7 +301,7 @@ async def process_menu(message: Message, state: FSMContext) -> None:
         return
 
     await state.clear()
-    keyboard = await get_menu_keyboard()
+    keyboard = await get_menu_keyboard(message.message_id)
     await message.answer(
         text="📋 *Выберите действие, которое хотите выполнить:*",
         reply_markup=keyboard,
@@ -827,28 +847,68 @@ async def process_change_stop_words(message: Message, state: FSMContext) -> None
     )
 
 
-@dp.callback_query(lambda call: re.match(r'analyze_order_ai:\d+', call.data))
-async def analyze_order_ai(callback_query: CallbackQuery):
-    project_id = int(callback_query.data.split(':')[1])
-    data, status = await api.projects_analyze(
-        project_id,
-        callback_query.from_user.id,
-        callback_query.message.message_id,
-        "base"
-    )
-    await callback_query.answer(f'Проект отправлен на анализ AI')
-
-
 @dp.callback_query(lambda call: re.match(r'analyze_order_pro_ai:\d+', call.data))
 async def analyze_order_pro_ai(callback_query: CallbackQuery):
     project_id = int(callback_query.data.split(':')[1])
+    message = await callback_query.message.reply(f'Выполняется анализ AI...')
     data, status = await api.projects_analyze(
         project_id,
         callback_query.from_user.id,
-        callback_query.message.message_id,
-        "pro"
+        message_id=callback_query.message.message_id,
+        delete_message_id=message.message_id,
     )
-    await callback_query.answer(f'Проект отправлен на анализ PRO AI')
+
+
+@dp.callback_query(lambda call: re.match(r"buy_gpt_requests:\d+", call.data))
+async def process_buy_gpt_requests(callback_query: CallbackQuery):
+    message_id = int(callback_query.data.split(":")[-1])
+
+    await callback_query.message.delete()
+    keyboard = await get_buy_gpt_requests_keyboard()
+
+    caption = (
+        "*PRO-подписка на месяц в подарок!\n"
+        "**PRO-подписка на три месяца в подарок!\n\n"
+        "Выберите один из доступных пакетов запросов:"
+    )
+
+    image_path = './buy_ai.jpg'
+
+    await bot.send_photo(
+        chat_id=callback_query.message.chat.id,
+        photo=FSInputFile(image_path),
+        caption=caption,
+        reply_markup=keyboard,
+        # reply_to_message_id=message_id
+    )
+
+@dp.callback_query(lambda call: re.match(r"buy_subscription:\d+", call.data))
+async def process_buy_subscription(callback_query: CallbackQuery):
+    message_id = int(callback_query.data.split(":")[-1])
+    await callback_query.message.delete()
+
+    keyboard = await get_buy_subscription_keyboard()
+
+    caption = (
+        "*10 AI-запросов в подарок!\n"
+        "**30 AI-запросов в подарок!\n\n"
+        "Выберите один из доступных вариантов подписки:"
+    )
+
+    image_path = './buy_pro.jpg'
+
+    await bot.send_photo(
+        chat_id=callback_query.message.chat.id,
+        photo=FSInputFile(image_path),
+        caption=caption,
+        reply_markup=keyboard,
+        # reply_to_message_id=message_id
+    )
+
+
+# @dp.callback_query(lambda call: re.match(r"buy_gpt_requests:\d+", call.data))
+# async def buy_gpt_requests(callback_query: CallbackQuery):
+#     requests_count = int(callback_query.data)
 
 
 # @dp.message(Command("projects"))

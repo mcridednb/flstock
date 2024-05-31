@@ -95,14 +95,14 @@ class ProjectAnalyzeView(APIView):
     def post(self, request, id, *args, **kwargs):
         project = get_object_or_404(Project, id=id)
         chat_id = request.data.get("chat_id")
-        gpt_model_id = request.data.get("model")
         message_id = request.data.get("message_id")
+        delete_message_id = request.data.get("delete_message_id")
         additional_info = request.data.get("additional_info")
 
-        if not chat_id or not gpt_model_id:
-            return JsonResponse({"detail": "chat_id and model are required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not chat_id:
+            return JsonResponse({"detail": "chat_id are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        gpt_request.delay(project.id, message_id, chat_id, gpt_model_id, additional_info)
+        gpt_request.delay(project.id, message_id, delete_message_id, chat_id, additional_info)
 
         return JsonResponse({"detail": "Analysis task has been queued."}, status=status.HTTP_202_ACCEPTED)
 

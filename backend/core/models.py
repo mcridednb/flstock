@@ -163,7 +163,7 @@ class TelegramUser(models.Model):
     experience = models.CharField(max_length=1024, blank=True, null=True)
     hourly_rate = models.IntegerField(blank=True, null=True)
 
-    user_subscription = models.ForeignKey(UserSubscription, on_delete=models.PROTECT, null=True)
+    user_subscription = models.ForeignKey(UserSubscription, on_delete=models.PROTECT, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -319,45 +319,26 @@ class GPTRequest(models.Model):
         buffer.seek(0)
         return response, buffer
 
-    def _send_limit_exceeded_message(self, message_id):
-        keyboard = json.dumps({
-            "inline_keyboard": [[{
-                "text": "💳 Купить запросы",
-                "callback_data": "buy_gpt_requests"
-            }]]
-        })
-
+    def _delete_message(self, delete_message_id):
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/deleteMessage"
         data = {
             'chat_id': self.user.chat_id,
-            'text': (
-                "🚫 *Достигнут лимит запросов.*\n\n"
-                "Нажмите на кнопку ниже, чтобы купить больше запросов."
-            ),
-            'parse_mode': 'Markdown',
-            'reply_to_message_id': message_id,
-            'reply_markup': keyboard
+            'message_id': delete_message_id
         }
-        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
-        response = requests.post(url, json=data)
+        response = requests.post(url, data=data)
         return response.json()
 
-    def send_user_response(self, message_id):
-        if self.user.gpt_request_limit <= 0:
-            self._send_limit_exceeded_message(message_id)
-            return
-
+    def send_user_response(self, message_id, delete_message_id):
         response, pdf_buffer = self._generate_pdf()
         files = {
             'document': (f'report.pdf', pdf_buffer, 'application/pdf')
         }
-
         keyboard = {
             "inline_keyboard": [
                 [{"text": "⚠️ Пожаловаться", "callback_data": f"complain:{self.id}"}]
             ]
         }
         keyboard_json = json.dumps(keyboard)
-
         data = {
             'chat_id': self.user.chat_id,
             'text': response["response"],
@@ -367,6 +348,7 @@ class GPTRequest(models.Model):
         }
         url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendDocument"
         response = requests.post(url, data=data, files=files)
+        self._delete_message(delete_message_id)
         self.user.gpt_request_limit -= 1
         self.user.save()
         return response.json()
