@@ -171,16 +171,16 @@ async def get_change_profile_keyboard():
 
 async def get_buy_gpt_requests_keyboard():
     buttons = [
-        [types.InlineKeyboardButton(text="10 запросов — 199₽", callback_data=f"buy_gpt_requests:10")],
-        [types.InlineKeyboardButton(text="50 запросов + 1 PRO — 890₽", callback_data=f"buy_gpt_requests:50")],
-        [types.InlineKeyboardButton(text="100 запросов + 3 PRO — 1580₽ ", callback_data=f"buy_gpt_requests:100")],
+        [types.InlineKeyboardButton(text="10 запросов — 190₽", callback_data=f"buy_gpt_requests:10")],
+        [types.InlineKeyboardButton(text="50 запросов + 1 PRO — 790₽", callback_data=f"buy_gpt_requests:50")],
+        [types.InlineKeyboardButton(text="100 запросов + 3 PRO — 1390₽ ", callback_data=f"buy_gpt_requests:100")],
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 async def get_buy_subscription_keyboard():
     buttons = [
-        [types.InlineKeyboardButton(text="1 месяц — 199₽", callback_data=f"buy_subscription:1")],
+        [types.InlineKeyboardButton(text="1 месяц — 190₽", callback_data=f"buy_subscription:1")],
         [types.InlineKeyboardButton(text="3 месяца + 10 AI — 490₽", callback_data=f"buy_subscription:3")],
         [types.InlineKeyboardButton(text="6 месяцев + 30 AI — 890₽ ", callback_data=f"buy_subscription:6")],
     ]
