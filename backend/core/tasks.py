@@ -112,10 +112,6 @@ def send_project_task(project_id):
 
         price_text += project.currency_symbol
 
-    gpt_prompt = GPTPrompt.objects.filter(
-        category=project.category,
-    )
-
     users = TelegramUser.objects.filter(
         category_subscriptions__subcategory=project.subcategory,
         source_subscriptions__source=project.source,
@@ -123,16 +119,14 @@ def send_project_task(project_id):
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": "📋 Перейти к заказу", "url": project.url}],
+            [{"text": "🌐 Перейти к заказу", "url": project.url}],
+            [{"text": "🤖️ Составить отклик (1 токен)", "callback_data": f"project:response:{project.id}:"}],
+            [{"text": "🚀 Составить решение (2 токена)", "callback_data": f"project:analyze:{project.id}:"}],
+            [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"project:complain:{project.id}:"}],
+            [{"text": "❌ Закрыть", "callback_data": "close"}]
         ]
     }
 
-    if gpt_prompt:
-        keyboard["inline_keyboard"].append(
-            [{"text": "🤖 Проанализировать заказ (AI)", "callback_data": f"analyze_order_pro_ai:{project.id}"}],
-        )
-
-    keyboard["inline_keyboard"].append([{"text": "❌ Не интересно", "callback_data": "close"}])
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendPhoto"
     img_data = create_infographic(
         title,
@@ -142,6 +136,18 @@ def send_project_task(project_id):
         minutes_ago,
         project.subcategory.title,
     )
+    response = requests.post(
+        url,
+        data={
+            "chat_id": -1002238232891,
+            "message_thread_id": 2,
+        },
+        files={
+            "photo": BytesIO(img_data)
+        }
+    )
+
+    file_id = response.json()["result"]["photo"][-1]["file_id"]
 
     for user in users:
         if user.stop_words and user.stop_words.strip():
@@ -163,10 +169,9 @@ def send_project_task(project_id):
             "chat_id": user.chat_id,
             "caption": caption,
             "reply_markup": json.dumps(keyboard),
+            "photo": file_id,
         }
-        response = requests.post(url, data=payload, files={
-            "photo": BytesIO(img_data)
-        })
+        response = requests.post(url, data=payload)
         if response.status_code != 200:
             print(f"Failed to send message to {user.chat_id}: {response.text}")
             return
@@ -175,11 +180,11 @@ def send_project_task(project_id):
     project.save()
 
 
-def send_limit_exceeded_message(chat_id, message_id, delete_message_id):
+def send_limit_exceeded_message(chat_id, delete_message_id):
     keyboard = json.dumps({
         "inline_keyboard": [[{
-            "text": "🤖 Купить AI-запросы",
-            "callback_data": f"buy_gpt_requests:{message_id}"
+            "text": "🪙 Пополнить токены",
+            "callback_data": f"token:get:::"
         }]]
     })
 
@@ -187,8 +192,8 @@ def send_limit_exceeded_message(chat_id, message_id, delete_message_id):
         'chat_id': chat_id,
         'message_id': delete_message_id,
         'text': (
-            "🚫 *Достигнут лимит запросов.*\n\n"
-            "Нажмите на кнопку ниже, чтобы купить больше запросов."
+            "🚫 *Недостаточно токенов.*\n\n"
+            "Нажмите на кнопку ниже, чтобы пополнить баланс."
         ),
         'parse_mode': 'Markdown',
         'reply_markup': keyboard
@@ -198,37 +203,48 @@ def send_limit_exceeded_message(chat_id, message_id, delete_message_id):
     return response.json()
 
 
+def send_edit_keyboard_message(chat_id, request_id, delete_message_id, project_id):
+    keyboard = json.dumps({
+        "inline_keyboard": [[{
+            "text": "⚠️ Сообщить об ошибке",
+            "callback_data": f"gpt:{request_id}:complain:{project_id}:"
+        }]]
+    })
+
+    data = {
+        'chat_id': chat_id,
+        'message_id': delete_message_id,
+        'parse_mode': 'Markdown',
+        'reply_markup': keyboard
+    }
+    url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/editMessageReplyMarkup"
+    response = requests.post(url, json=data)
+    return response.json()
+
+
 @app.task(name="gpt_request")
-def gpt_request(project_id, message_id, delete_message_id, chat_id, additional_info):
+def gpt_request(project_id, message_id, delete_message_id, chat_id, request_type, additional_info):
     try:
         user = TelegramUser.objects.get(chat_id=chat_id)
     except TelegramUser.DoesNotExist as exc:
-        ...  # отправить сообщение что что-то пошло не так
         return
 
-    if user.gpt_request_limit <= 0:
-        send_limit_exceeded_message(user.chat_id, message_id, delete_message_id)
+    if user.tokens <= 0:
+        send_limit_exceeded_message(user.chat_id, delete_message_id)
         return
 
     project = Project.objects.get(id=project_id)
     prompt = GPTPrompt.objects.get(
         model__code="gpt-4o",
+        type=request_type,
         category=project.category,
     )
-    GPTRequest.objects.create(
+    request = GPTRequest.objects.create(
         prompt=prompt,
         user=user,
         project=project,
+        type=request_type,
         additional_info=additional_info,
-    ).send_user_response(message_id, delete_message_id)
-
-# celery -A backend worker --loglevel=info
-# celery -A backend beat --loglevel=info
-# @app.task(name="clean_gpt_limits")
-# def clean_gpt_limits():
-#     redis_client = redis.StrictRedis(
-#         host=settings.REDIS_HOST,
-#         port=settings.REDIS_PORT,
-#         db=1,
-#     )
-#     redis_client.flushdb()
+    )
+    send_edit_keyboard_message(chat_id, request.id, delete_message_id, project_id)
+    request.send_user_response(message_id, delete_message_id)

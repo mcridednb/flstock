@@ -1,5 +1,7 @@
 import io
 import json
+import uuid
+from datetime import datetime, timedelta
 
 import html2text
 import pdfkit
@@ -10,6 +12,7 @@ from django.db import models
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from openai import OpenAI
+from yookassa import Configuration, Payment as YooKassaPayment
 
 
 class Source(models.Model):
@@ -47,21 +50,6 @@ class Subcategory(models.Model):
     class Meta:
         verbose_name = "Подкатегорию"
         verbose_name_plural = "Подкатегории"
-
-
-class SourceCategory(models.Model):
-    title = models.CharField(max_length=255)
-    code = models.CharField(max_length=255)
-    source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name="categories")
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = "Категория источника"
-        verbose_name_plural = "Категории источников"
-        unique_together = ("source", "code")
-
-    def __str__(self):
-        return f"{self.source}:{self.title} ({self.code}) -> {self.category}"
 
 
 class Project(models.Model):
@@ -118,25 +106,30 @@ class GPTModel(models.Model):
 
 
 class GPTPrompt(models.Model):
+    class TypeChoices(models.TextChoices):
+        RESPONSE = "response", _("Отклик")
+        ANALYZE = "analyze", _("Анализ")
+
     model = models.ForeignKey(GPTModel, on_delete=models.PROTECT, related_name="prompts")
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
     text = models.TextField()
     response_format = models.JSONField()
+    type = models.CharField(max_length=50, choices=TypeChoices.choices, default=TypeChoices.ANALYZE)
+    tokens = models.PositiveIntegerField(default=2)
 
     class Meta:
-        unique_together = ("model", "category")
+        unique_together = ("model", "category", "type")
         verbose_name = "GPT-промпт"
         verbose_name_plural = "GPT-промпты"
 
     def __str__(self):
-        return f"{self.model} -> {self.category}"
+        return f"{self.category} -> {dict(self.TypeChoices.choices)[self.type]}"
 
 
 class Subscription(models.Model):
     title = models.CharField("Название", max_length=255)
-    price = models.IntegerField("Цена")
+    tokens = models.IntegerField("Цена")
     days_count = models.IntegerField(default=30)
-    gpt_request_limit = models.IntegerField(default=5)
 
     def __str__(self):
         return self.title
@@ -144,12 +137,6 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = "Тарифный план"
         verbose_name_plural = "Тарифные планы"
-
-
-class UserSubscription(models.Model):
-    subscription = models.ForeignKey(Subscription, on_delete=models.PROTECT)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
 
 class TelegramUser(models.Model):
@@ -163,14 +150,63 @@ class TelegramUser(models.Model):
     experience = models.CharField(max_length=1024, blank=True, null=True)
     hourly_rate = models.IntegerField(blank=True, null=True)
 
-    user_subscription = models.ForeignKey(UserSubscription, on_delete=models.PROTECT, null=True, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     stop_words = models.CharField(max_length=2048, null=True, blank=True)
     keywords = models.CharField(max_length=2048, null=True, blank=True)
 
-    gpt_request_limit = models.PositiveIntegerField(default=2)
+    referrer = models.ForeignKey("TelegramUser", models.PROTECT, related_name="referrals", null=True, blank=True)
+    registration_completed = models.BooleanField(default=False)
+
+    tokens = models.PositiveIntegerField(default=10)
+    subscription_until = models.DateField(null=True, blank=True)
+
+    @property
+    def subscription(self):
+        return self.subscription_until.strftime('%d.%m.%Y')
+
+    def delete_message(self, delete_message_id):
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/deleteMessage"
+        data = {
+            'chat_id': self.chat_id,
+            'message_id': delete_message_id
+        }
+        response = requests.post(url, data=data)
+        return response.json()
+
+    def send_message(self, text, keyboard=None):
+        data = {
+            'chat_id': self.chat_id,
+            'text': text,
+            'parse_mode': 'Markdown',
+        }
+        if keyboard:
+            keyboard = {
+                "inline_keyboard": [
+                    [{"text": button_text, "callback_data": callback_data}]
+                    for button_text, callback_data in keyboard
+                ]
+            }
+            data["reply_markup"] = json.dumps(keyboard)
+
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+
+        response = requests.post(url, data=data)
+        return response.json()
+
+    def send_bonus(self, reason: str, value: int):
+        self.tokens += value
+        self.save()
+        return self.send_message(
+            f"*{reason}:*\n"
+            f"🥳 *+{value} токенов!*\n"
+            f"🪙 *Текущий баланс: {self.tokens}*",
+            keyboard=[("❌ Закрыть", "close")]
+        )
+
+    @property
+    def is_pro(self):
+        return bool(self.subscription_until and self.subscription_until >= datetime.today().date())
 
     def __str__(self):
         return f"{self.name or 'Не представился'} (ID: {self.chat_id})"
@@ -234,20 +270,30 @@ class SourceSubscription(models.Model):
 
 
 class GPTRequest(models.Model):
+    class TypeChoices(models.TextChoices):
+        RESPONSE = "response", _("Отклик")
+        ANALYZE = "analyze", _("Анализ")
+        SALE_PLAN = "sale_plan", _("План продажи")
+
     class StatusChoices(models.TextChoices):
         ACCEPTED = "accepted", _("Принят")
         COMPLETED = "completed", _("Выполнен")
         DELIVERED = "delivered", _("Отправлен пользователю")
 
     status = models.CharField(
-        max_length=10,
+        max_length=100,
         choices=StatusChoices.choices,
         default=StatusChoices.ACCEPTED,
     )
+    type = models.CharField(
+        max_length=100,
+        choices=TypeChoices.choices,
+        default=TypeChoices.ANALYZE,
+    )
 
-    prompt = models.ForeignKey(GPTPrompt, on_delete=models.CASCADE, related_name="gpt_requests")
-    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="gpt_requests")
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="gpt_requests")
+    prompt = models.ForeignKey(GPTPrompt, on_delete=models.PROTECT, related_name="gpt_requests")
+    user = models.ForeignKey(TelegramUser, on_delete=models.PROTECT, related_name="gpt_requests")
+    project = models.ForeignKey(Project, on_delete=models.PROTECT, related_name="gpt_requests")
     name = models.CharField(max_length=255, blank=True, null=True)
     skills = models.CharField(max_length=512, blank=True, null=True)
     summary = models.CharField(max_length=1024, blank=True, null=True)
@@ -328,14 +374,47 @@ class GPTRequest(models.Model):
         response = requests.post(url, data=data)
         return response.json()
 
-    def send_user_response(self, message_id, delete_message_id):
+    def _send_response(self, message_id, delete_message_id):
+        response = self._openai_request()
+
+        keyboard = {
+            "inline_keyboard": [
+                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:answer:{self.id}"}],
+                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:complain:{self.id}"}],
+            ]
+        }
+        keyboard_json = json.dumps(keyboard)
+
+        data = {
+            'chat_id': self.user.chat_id,
+            'text': f"*Ваш отклик:*\n\n{response['response']}",
+            'parse_mode': 'Markdown',
+            'reply_to_message_id': message_id,
+            'reply_markup': keyboard_json,
+        }
+
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+        response = requests.post(url, data=data)
+        self._delete_message(delete_message_id)
+        transaction = Transaction.objects.create(
+            type=Transaction.TypeChoices.GPT_REQUEST,
+            user=self.user,
+            project=self.project,
+            gpt_request=self,
+            tokens=self.prompt.tokens,
+        )
+        transaction.update_user()
+        return response.json()
+
+    def _send_analyze(self, message_id, delete_message_id):
         response, pdf_buffer = self._generate_pdf()
         files = {
             'document': (f'report.pdf', pdf_buffer, 'application/pdf')
         }
         keyboard = {
             "inline_keyboard": [
-                [{"text": "⚠️ Пожаловаться", "callback_data": f"complain:{self.id}"}]
+                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:answer:{self.id}"}],
+                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:complain:{self.id}"}],
             ]
         }
         keyboard_json = json.dumps(keyboard)
@@ -349,6 +428,119 @@ class GPTRequest(models.Model):
         url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendDocument"
         response = requests.post(url, data=data, files=files)
         self._delete_message(delete_message_id)
-        self.user.gpt_request_limit -= 1
-        self.user.save()
+        transaction = Transaction.objects.create(
+            type=Transaction.TypeChoices.GPT_REQUEST,
+            user=self.user,
+            project=self.project,
+            gpt_request=self,
+            tokens=self.prompt.tokens,
+        )
+        transaction.update_user()
         return response.json()
+
+    def _send_sales_plan(self, message_id, delete_message_id):
+        ...
+
+    def send_user_response(self, message_id, delete_message_id):
+        send_function = {
+            self.TypeChoices.RESPONSE: self._send_response,
+            self.TypeChoices.ANALYZE: self._send_analyze,
+            self.TypeChoices.SALE_PLAN: self._send_sales_plan,
+        }[self.type]
+        return send_function(message_id, delete_message_id)
+
+
+class Payment(models.Model):
+    class StatusChoices(models.TextChoices):
+        ACCEPTED = "accepted", _("Принят")
+        GENERATED = "generated", _("Сформирован")
+        COMPLETED = "completed", _("Выполнен")
+
+    status = models.CharField(
+        max_length=10,
+        choices=StatusChoices.choices,
+        default=StatusChoices.ACCEPTED,
+    )
+
+    user = models.ForeignKey(TelegramUser, on_delete=models.PROTECT, related_name="payments")
+    tokens = models.IntegerField(default=0)
+    value = models.DecimalField(decimal_places=2, max_digits=10)
+    payment_uuid = models.CharField(max_length=255, null=True)
+    idempotent_uuid = models.CharField(max_length=255, null=True)
+    delete_message_id = models.CharField(max_length=255, null=True)
+    payment = models.JSONField(null=True)
+    response = models.JSONField(null=True)
+
+    def update_user(self):
+        self.user.tokens += self.tokens
+        self.user.save()
+        self.user.delete_message(self.delete_message_id)
+        return self.user.send_message(
+            f"🥳 *Вам начислено {self.tokens} токенов!*\n"
+            f"🪙 *Текущий баланс: {self.user.tokens}*",
+            keyboard=[("❌ Закрыть", "close")]
+        )
+
+    def generate_bill(self):
+        Configuration.account_id = settings.YOOKASSA_ACCOUNT_ID
+        Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
+
+        self.idempotent_uuid = uuid.uuid4()
+        payment = YooKassaPayment.create({
+            "amount": {
+                "value": self.value,
+                "currency": "RUB"
+            },
+            "confirmation": {
+                "type": "redirect",
+                "return_url": "https://t.me/flstock_bot"
+            },
+            "capture": True,
+            "description": "Покупка токенов",
+        }, self.idempotent_uuid)
+        self.payment_uuid = payment.id
+        self.status = self.StatusChoices.GENERATED
+        self.payment = payment.json()
+        self.save()
+        return payment
+
+    @property
+    def url(self):
+        return json.loads(self.payment)["confirmation"]["confirmation_url"]
+
+
+class Transaction(models.Model):
+    class TypeChoices(models.TextChoices):
+        SUBSCRIPTION = "subscription", _("Подписка")
+        GPT_REQUEST = "gpt_request", _("AI-запрос")
+
+    type = models.CharField(
+        max_length=100,
+        choices=TypeChoices.choices,
+        default=TypeChoices.GPT_REQUEST,
+    )
+
+    user = models.ForeignKey(TelegramUser, on_delete=models.PROTECT, related_name="transactions")
+    project = models.ForeignKey(Project, on_delete=models.PROTECT, related_name="transactions", null=True, blank=True)
+    subscription = models.ForeignKey(
+        Subscription, on_delete=models.PROTECT, related_name="transactions", null=True, blank=True
+    )
+    gpt_request = models.OneToOneField(GPTRequest, on_delete=models.PROTECT, null=True, blank=True)
+    tokens = models.PositiveIntegerField()
+
+    def update_user(self):
+        if self.type == self.TypeChoices.SUBSCRIPTION:
+            subscription_until = datetime.today().date()
+            if self.user.is_pro:
+                subscription_until = self.user.subscription_until
+            self.user.subscription_until = subscription_until + timedelta(days=self.subscription.days_count)
+            self.user.tokens -= self.subscription.tokens
+
+        if self.type == self.TypeChoices.GPT_REQUEST:
+            self.user.tokens -= self.tokens
+
+        self.user.save()
+
+
+class Complain(models.Model):
+    ...

@@ -30,6 +30,8 @@ pdfkit = "*"
 pillow = "*"
 pilmoji = "*"
 emoji = "==1.7.0"
+pydantic-settings = "*"
+yookassa = "*"
 
 [dev-packages]
 

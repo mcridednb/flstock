@@ -1,10 +1,33 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from core.models import TelegramUser, Category, CategorySubscription, Project, Subcategory, SourceSubscription, Source
+from core.models import (
+    TelegramUser,
+    Category,
+    CategorySubscription,
+    Project,
+    Subcategory,
+    SourceSubscription,
+    Source,
+    Payment, Transaction, Subscription,
+)
+from core.tasks import send_limit_exceeded_message
 
 
 class TelegramUserSerializer(serializers.ModelSerializer):
+    referrer = serializers.CharField(write_only=True, required=False, allow_null=True)
+    subscription = serializers.CharField(read_only=True)
+
+    def create(self, validated_data):
+        referrer = validated_data.pop("referrer", None)
+        if referrer:
+            try:
+                validated_data["referrer"] = TelegramUser.objects.get(chat_id=referrer)
+            except TelegramUser.DoesNotExist:
+                pass
+
+        return super().create(validated_data)
+
     class Meta:
         model = TelegramUser
         fields = [
@@ -17,11 +40,17 @@ class TelegramUserSerializer(serializers.ModelSerializer):
             "summary",
             "experience",
             "hourly_rate",
-            "user_subscription",
+
             "stop_words",
             "keywords",
+
+            "referrer",
+            "registration_completed",
+
+            "tokens",
+            "subscription",
         ]
-        read_only_fields = ("user_subscription",)
+        read_only_fields = ("tokens", "subscription_until", "registration_completed")
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -94,19 +123,17 @@ class CategorySubscriptionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         chat_id = validated_data.pop("chat_id", None)
         user = self.validate_chat_id(chat_id)
-        validated_data["user"] = user
 
         subcategory_code = validated_data.pop("subcategory_code", None)
         if subcategory_code:
             try:
                 subcategory = Subcategory.objects.get(code=subcategory_code)
-                validated_data["subcategory"] = subcategory
             except Subcategory.DoesNotExist:
                 raise ValidationError(f"Подкатегория не найдена")
         else:
             raise ValidationError(f"Пустой код подкатегории.")
 
-        if not user.user_subscription:
+        if not user.is_pro:
             exist = CategorySubscription.objects.filter(user=user, subcategory=subcategory)
             if not exist and CategorySubscription.objects.filter(user=user).count() >= 3:
                 raise ValidationError("🚫 Вы не можете указать больше 3-х категорий.")
@@ -145,19 +172,17 @@ class SourceSubscriptionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         chat_id = validated_data.pop("chat_id", None)
         user = self.validate_chat_id(chat_id)
-        validated_data["user"] = user
 
         source_code = validated_data.pop("source_code", None)
         if source_code:
             try:
                 source = Source.objects.get(code=source_code)
-                validated_data["source"] = source
             except Source.DoesNotExist:
                 raise ValidationError(f"Источник не найден")
         else:
             raise ValidationError(f"Пустой код источника")
 
-        if not user.user_subscription:
+        if not user.is_pro:
             exist = SourceSubscription.objects.filter(user=user, source=source)
             if not exist and SourceSubscription.objects.filter(user=user).count() >= 2:
                 raise ValidationError("🚫 Вы не можете указать больше 2-х источников.")
@@ -189,3 +214,91 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = "__all__"
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(write_only=True)
+    url = serializers.ReadOnlyField()
+
+    def create(self, validated_data):
+        chat_id = validated_data.pop("user")
+        validated_data["user"] = self.validate_chat_id(chat_id)
+        instance = super().create(validated_data)
+        instance.generate_bill()
+        return instance
+
+    def validate_chat_id(self, value):
+        if isinstance(value, TelegramUser):
+            return value
+        try:
+            return TelegramUser.objects.get(chat_id=str(value))
+        except TelegramUser.DoesNotExist:
+            raise serializers.ValidationError("User does not exist with the provided chat_id")
+
+    class Meta:
+        model = Payment
+        fields = [
+            "user",
+            "tokens",
+            "value",
+            "url",
+            "delete_message_id",
+        ]
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(write_only=True)
+    delete_message_id = serializers.CharField(write_only=True)
+    value = serializers.IntegerField(write_only=True)
+
+    def create(self, validated_data):
+        chat_id = validated_data.pop("user")
+        tokens = validated_data.get("tokens")
+        value = validated_data.pop("value")
+        delete_message_id = validated_data.pop("delete_message_id")
+        user = self.validate_chat_id(chat_id)
+
+        if user.tokens < tokens:
+            send_limit_exceeded_message(user.chat_id, delete_message_id)
+            raise serializers.ValidationError("Not enough tokens")
+
+        validated_data["user"] = user
+        value_title_map = {
+            30: "🥳 1 месяц",
+            90: "💪 3 месяца",
+            180: "🚀 6 месяцев",
+        }
+        subscription, _ = Subscription.objects.get_or_create(
+            title=value_title_map[value],
+            tokens=tokens,
+            days_count=value,
+        )
+        validated_data["subscription"] = subscription
+        instance = super().create(validated_data)
+        instance.update_user()
+        user.delete_message(delete_message_id)
+        user.send_message(
+            "🎉 *Поздравляем!*\n\n"
+            f"*Подписка активирована до: {user.subscription_until.strftime('%d.%m.%Y')}*",
+            keyboard=[("❌ Закрыть", "close")]
+        )
+        return instance
+
+    def validate_chat_id(self, value):
+        if isinstance(value, TelegramUser):
+            return value
+        try:
+            return TelegramUser.objects.get(chat_id=str(value))
+        except TelegramUser.DoesNotExist:
+            raise serializers.ValidationError("User does not exist with the provided chat_id")
+
+    class Meta:
+        model = Transaction
+        fields = [
+            "user",
+            "type",
+            "subscription",
+            "tokens",
+            "value",
+            "delete_message_id",
+        ]
