@@ -470,6 +470,7 @@ class Payment(models.Model):
     delete_message_id = models.CharField(max_length=255, null=True)
     payment = models.JSONField(null=True)
     response = models.JSONField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def update_user(self):
         self.user.tokens += self.tokens
