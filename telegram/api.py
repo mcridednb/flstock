@@ -5,22 +5,24 @@ from urllib.parse import urljoin
 from aiohttp import ClientSession
 from aiohttp import hdrs
 from dotenv import load_dotenv
+from loguru import logger
 
 load_dotenv()
-
-logging.basicConfig(level=logging.INFO)
 
 BACKEND_URL = os.getenv("BACKEND_URL")
 API_URL = urljoin(BACKEND_URL, "/api/")
 
 
 async def api_call(method, endpoint, params=None, json=None):
-    async with ClientSession() as session:
-        headers = {"Content-Type": "application/json"}
-        url = urljoin(API_URL, endpoint)
-        response = await session.request(method, url, json=json, params=params, headers=headers)
-        return await response.json(), response.status
-
+    try:
+        async with ClientSession() as session:
+            headers = {"Content-Type": "application/json"}
+            url = urljoin(API_URL, endpoint)
+            response = await session.request(method, url, json=json, params=params, headers=headers)
+            return await response.json(), response.status
+    except Exception as exc:
+        logger.exception(exc)
+        logger.info(response.text())
 
 async def user_create(message, referrer):
     endpoint = "telegram-users/"
