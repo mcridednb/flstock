@@ -494,10 +494,10 @@ class Payment(models.Model):
             },
             "confirmation": {
                 "type": "redirect",
-                "return_url": "https://t.me/flstock_bot"
+                "return_url": settings.BOT_URL,
             },
             "capture": True,
-            "description": "Покупка токенов",
+            "description": "Пополнение баланса",
         }, self.idempotent_uuid)
         self.payment_uuid = payment.id
         self.status = self.StatusChoices.GENERATED
