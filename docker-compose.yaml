@@ -229,7 +229,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sh -c "python manage.py migrate && python -m gunicorn --workers=4 --env DJANGO_SETTINGS_MODULE=backend.settings backend.wsgi:application --bind 0.0.0.0:8000"
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+      gunicorn --workers=4 --worker-class gevent --timeout 120 --env DJANGO_SETTINGS_MODULE=backend.settings backend.wsgi:application --bind 0.0.0.0:8000"
     env_file:
       - .env
     ports:
