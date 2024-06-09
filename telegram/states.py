@@ -2,6 +2,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class Registration(StatesGroup):
+    email = State()
     source = State()
     category = State()
     subcategory = State()
@@ -21,6 +22,7 @@ class Notifications(StatesGroup):
     subcategory = State()
     keywords = State()
     stop_words = State()
+    min_price = State()
 
 
 class GPT(StatesGroup):

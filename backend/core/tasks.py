@@ -150,6 +150,13 @@ def send_project_task(project_id):
     file_id = response.json()["result"]["photo"][-1]["file_id"]
 
     for user in users:
+        if user.min_price and project.price:
+            if int(project.price) < user.min_price:
+                if not project.price_max:
+                    continue
+                if int(project.price_max) < user.min_price:
+                    continue
+
         if user.stop_words and user.stop_words.strip():
             has_stop_word = check_words(user.stop_words.strip(), title, description)
             if has_stop_word:

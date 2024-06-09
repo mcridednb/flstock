@@ -38,44 +38,20 @@ def check(member):
 #     return True
 
 
-@router.message(CommandStart(deep_link=True, deep_link_encoded=True))
-async def send_welcome_deep(message: Message, state: FSMContext, command: CommandObject):
-    referrer = command.args
-    await send_welcome(message, state, referrer)
-
-
-@router.message(CommandStart())
-async def send_welcome(message: Message, state: FSMContext, referrer=None):
-    response, status = await api.user_detail(message.from_user.id)
-    if status == 404 or not response["registration_completed"]:
-        response, status = await api.user_create(message, referrer)
-        await state.set_state(Registration.source)
-        keyboard = await keyboards.get_sources_keyboard(message, state)
-        await message.answer(
-            "👋 *Добро пожаловать!*\n\n"
-            "🔔 Пожалуйста, отметьте источники, "
-            "по которым хотите получать уведомления:\n\n"
-            "(Это можно будет изменить в настройках позднее)",
-            reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN,
-        )
-    else:
-        await state.clear()
-        keyboard = await keyboards.get_menu_keyboard(message.message_id)
-        await message.answer(
-            text=await get_menu_data(message.from_user.id, state),
-            reply_markup=keyboard,
-            parse_mode="Markdown"
-        )
-
-
 @router.message(Command("link"))
 async def process_link(message: Message, state: FSMContext) -> None:
     link = await create_start_link(message.bot, str(message.from_user.id), encode=True)
     await state.clear()
     await message.answer(
-        text=f"📋 Ваша реферальная ссылка: \n{link}",
-        parse_mode=ParseMode.HTML,
+        text=(
+            "🎁 *Получай бонусы за друзей!*\n\n"
+            "Поделитесь этой ссылкой с друзьями, и вы оба получите бонусные токены!\n\n"
+            "👥 *За каждого друга, который зарегистрируется по вашей ссылке, вы получите 10 токенов.*\n"
+            "🎁 *Ваш друг также получит 10 токенов.*\n\n"
+            "🔗 *Ваша реферальная ссылка:* \n"
+            f"{link}"
+        ),
+        parse_mode=ParseMode.MARKDOWN,
     )
 
 

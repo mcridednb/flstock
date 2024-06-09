@@ -16,8 +16,9 @@ async def get_notifications_data(chat_id, state):
     profile, _ = await api.user_detail(chat_id)
     await state.set_data(profile)
     profile_text = (
-        f"🏷️ *Ключевые слова:* {profile['keywords'] or 'Не указано'}\n\n"
+        f"🔑 *Ключевые слова:* {profile['keywords'] or 'Не указано'}\n\n"
         f"⛔️ *Минус слова:* {profile['stop_words'] or 'Не указано'}\n\n"
+        f"🫰 *Минимальная сумма:* {profile['min_price'] or 'Не указано'}\n\n"
         f"*Выберите поле для редактирования:*"
     )
     return profile_text
@@ -68,19 +69,13 @@ async def process_categories(callback_query: CallbackQuery, state: FSMContext) -
     )
 
 
-@router.callback_query(Registration.category, callbacks.Category.filter(F.action == callbacks.Action.set))
 @router.callback_query(Notifications.category, callbacks.Category.filter(F.action == callbacks.Action.set))
 async def process_category(
         callback_query: CallbackQuery,
         callback_data: callbacks.Category,
         state: FSMContext
 ) -> None:
-    current_state = await state.get_state()
-    states_map = {
-        Registration.category: Registration.subcategory,
-        Notifications.category: Notifications.subcategory,
-    }
-    await state.set_state(states_map[current_state])
+    await state.set_state(Notifications.subcategory)
     await state.set_data({
         "category": callback_data.code,
     })
@@ -118,7 +113,6 @@ async def process_subcategory(
     await callback_query.message.edit_reply_markup(reply_markup=keyboard)
 
 
-@router.callback_query(Registration.source, callbacks.Source.filter(F.action == callbacks.Action.set))
 @router.callback_query(Notifications.source, callbacks.Source.filter(F.action == callbacks.Action.set))
 async def process_source(
         callback_query: CallbackQuery,
@@ -226,6 +220,52 @@ async def process_change_stop_words(message: Message, state: FSMContext) -> None
     )
 
 
+@router.callback_query(lambda call: call.data == "change_min_price")
+async def process_change_min_price(callback_query: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    min_price = data["min_price"]
+    buttons = [
+        [types.InlineKeyboardButton(text="🗑️️ Удалить минимальную сумму", callback_data="delete_min_price")],
+        [types.InlineKeyboardButton(text="🚫 Отмена", callback_data="notifications")],
+    ]
+    await state.set_state(Notifications.min_price)
+    await callback_query.message.edit_text(
+        f"*Текущее значение:* {min_price}\n\n"
+        "✍️ *Введите минимальную сумму:*",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=buttons),
+    )
+
+
+@router.message(Notifications.min_price)
+async def process_change_min_price(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    _, status = await api.user_patch(message, "min_price", message.text)
+
+    if status == 400:
+        buttons = [
+            [types.InlineKeyboardButton(text="🗑️️ Удалить минимальную сумму", callback_data="delete_min_price")],
+            [types.InlineKeyboardButton(text="🚫 Отмена", callback_data="notifications")],
+        ]
+        await message.answer(
+            "⚠️ Что-то пошло не так. Введите валидное число.\n\n"
+            "✍️ *Введите минимальную сумму:*",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=buttons),
+        )
+        await state.set_state(Notifications.min_price)
+        return
+
+    keyboard = await keyboards.get_notifications_keyboard()
+    text = await get_notifications_data(message.from_user.id, state)
+
+    await message.answer(
+        text,
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
 @router.callback_query(lambda call: call.data == "delete_stop_words")
 async def process_delete_stop_words(callback_query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
@@ -237,4 +277,11 @@ async def process_delete_stop_words(callback_query: CallbackQuery, state: FSMCon
 async def process_delete_keywords(callback_query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     _, status = await api.user_patch(callback_query, "keywords", None)
+    await process_notifications(callback_query, state)
+
+
+@router.callback_query(lambda call: call.data == "delete_min_price")
+async def process_delete_min_price(callback_query: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    _, status = await api.user_patch(callback_query, "min_price", None)
     await process_notifications(callback_query, state)

@@ -34,5 +34,4 @@ urlpatterns = [
     path("process-payment", ProcessPaymentView.as_view(), name="process-payment"),
 
     path("add-subscription", AddSubscriptionView.as_view(), name="add-subscription"),
-
 ]

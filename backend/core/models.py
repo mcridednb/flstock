@@ -154,12 +154,15 @@ class TelegramUser(models.Model):
 
     stop_words = models.CharField(max_length=2048, null=True, blank=True)
     keywords = models.CharField(max_length=2048, null=True, blank=True)
+    min_price = models.IntegerField(null=True, blank=True)
 
     referrer = models.ForeignKey("TelegramUser", models.PROTECT, related_name="referrals", null=True, blank=True)
     registration_completed = models.BooleanField(default=False)
 
     tokens = models.PositiveIntegerField(default=10)
     subscription_until = models.DateField(null=True, blank=True)
+
+    email = models.EmailField(null=True, blank=True)
 
     @property
     def subscription(self):
@@ -301,6 +304,9 @@ class GPTRequest(models.Model):
     hourly_rate = models.IntegerField(blank=True, null=True)
     additional_info = models.CharField(max_length=2048, null=True, blank=True)
 
+    input_tokens = models.IntegerField(null=True, blank=True)  # $5
+    output_tokens = models.IntegerField(null=True, blank=True)  # $15
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def _generate_gpt_request(self):
@@ -337,6 +343,7 @@ class GPTRequest(models.Model):
             messages=messages,
         )
         response_content = completion.choices[0].message.content
+        # TODO: tokens
         return json.loads(response_content)
 
     @property
@@ -478,7 +485,7 @@ class Payment(models.Model):
         self.user.delete_message(self.delete_message_id)
         return self.user.send_message(
             f"🥳 *Вам начислено {self.tokens} токенов!*\n"
-            f"🪙 *Текущий баланс: {self.user.tokens}*",
+            f"🪙 *Текущий баланс: {self.user.tokens} токенов*",
             keyboard=[("❌ Закрыть", "close")]
         )
 
@@ -497,8 +504,25 @@ class Payment(models.Model):
                 "return_url": settings.BOT_URL,
             },
             "capture": True,
-            "description": "Пополнение баланса",
+            "description": f"Заказ №{self.id}",
+            "receipt": {
+                "customer": {
+                    "email": self.user.email,
+                },
+                "items": [
+                    {
+                        "description": "Информационно-консультационные услуги",
+                        "quantity": 1,
+                        "amount": {
+                            "value": self.value,
+                            "currency": "RUB"
+                        },
+                        "vat_code": "1"
+                    },
+                ]
+            }
         }, self.idempotent_uuid)
+
         self.payment_uuid = payment.id
         self.status = self.StatusChoices.GENERATED
         self.payment = payment.json()
@@ -528,6 +552,8 @@ class Transaction(models.Model):
     )
     gpt_request = models.OneToOneField(GPTRequest, on_delete=models.PROTECT, null=True, blank=True)
     tokens = models.PositiveIntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def update_user(self):
         if self.type == self.TypeChoices.SUBSCRIPTION:

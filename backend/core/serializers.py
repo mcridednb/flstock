@@ -41,8 +41,11 @@ class TelegramUserSerializer(serializers.ModelSerializer):
             "experience",
             "hourly_rate",
 
+            "email",
+
             "stop_words",
             "keywords",
+            "min_price",
 
             "referrer",
             "registration_completed",

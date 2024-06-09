@@ -17,6 +17,7 @@ async def on_startup(dispatcher: Dispatcher):
 
 
 def main():
+    from handlers.registration import router as registration_router
     from handlers.commands import router as commands_router
     from handlers.project import router as project_router
     from handlers.menu import router as menu_router
@@ -28,6 +29,7 @@ def main():
     redis_client = redis.StrictRedis(host=settings.redis_host, port=settings.redis_port, db=3)
     dp = Dispatcher(storage=RedisStorage(redis=redis_client))
     dp.include_routers(
+        registration_router,
         commands_router,
         project_router,
         menu_router,
@@ -49,6 +51,7 @@ def main():
 
 
 async def dev():
+    from handlers.registration import router as registration_router
     from handlers.commands import router as commands_router
     from handlers.project import router as project_router
     from handlers.menu import router as menu_router
@@ -59,6 +62,7 @@ async def dev():
 
     dp = Dispatcher()
     dp.include_routers(
+        registration_router,
         commands_router,
         profile_router,
         menu_router,

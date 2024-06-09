@@ -3,6 +3,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.deep_linking import create_start_link
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import api
@@ -15,7 +16,7 @@ router = Router()
 async def get_menu_data(chat_id, state):
     profile, _ = await api.user_detail(chat_id)
     await state.set_data(profile)
-    subscription = profile['subscription']
+    subscription = profile.get("subscription")
     if subscription:
         subscription = f"до {subscription}"
     menu_text = (
@@ -45,6 +46,25 @@ async def process_menu(callback_query: CallbackQuery, state: FSMContext) -> None
         text=await get_menu_data(callback_query.from_user.id, state),
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+@router.callback_query(F.data == "referral")
+async def process_referral(callback_query: CallbackQuery, state: FSMContext) -> None:
+    link = await create_start_link(callback_query.bot, str(callback_query.from_user.id), encode=True)
+    await state.clear()
+    link = link.replace('.', '\.').replace("=", "\=").replace("_", "\_")
+    await callback_query.message.answer(
+        text=(
+            "🎁 *Получай бонусы за друзей\!*\n\n"
+            "Поделитесь этой ссылкой с друзьями, и вы оба получите бонусные токены\!\n\n"
+            "👥 *За каждого друга, который зарегистрируется по вашей ссылке, вы получите 10 токенов\.*\n\n"
+            "🎁 *Ваш друг также получит 10 токенов\.*\n\n"
+            "🔗 *Ваша реферальная ссылка:* \n\n"
+            f"{link}"
+        ),
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=await keyboards.get_close_keyboard()
     )
 
 

@@ -1,4 +1,3 @@
-import logging
 import os
 from urllib.parse import urljoin
 
@@ -23,6 +22,7 @@ async def api_call(method, endpoint, params=None, json=None):
     except Exception as exc:
         logger.exception(exc)
         logger.info(response.text())
+
 
 async def user_create(message, referrer):
     endpoint = "telegram-users/"
@@ -93,7 +93,7 @@ async def projects_detail(project_id):
 
 
 async def gpt_request_create(
-    project_id, chat_id, message_id, delete_message_id, request_type, additional_info=None
+        project_id, chat_id, message_id, delete_message_id, request_type, additional_info=None
 ):
     endpoint = urljoin("projects/", str(project_id) + "/")
     endpoint = urljoin(endpoint, "gpt")

@@ -101,6 +101,7 @@ async def get_menu_keyboard(message_id):
     builder = InlineKeyboardBuilder()
     builder.button(text="👤 Редактировать профиль", callback_data="profile")
     builder.button(text="🔔 Редактировать уведомления", callback_data="notifications")
+    builder.button(text="👥 Пригласить друзей", callback_data="referral")
     builder.button(
         text="🪙 Пополнить токены",
         callback_data=callbacks.Token(
@@ -146,8 +147,9 @@ async def get_notifications_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="🌐 Редактировать источники", callback_data="sources")
     builder.button(text="📝 Редактировать категории", callback_data="categories")
-    builder.button(text="🏷 Ключевые слова", callback_data="change_keywords")
+    builder.button(text="🔑 Ключевые слова", callback_data="change_keywords")
     builder.button(text="⛔️ Минус слова", callback_data="change_stop_words")
+    builder.button(text="🫰 Минимальная сумма", callback_data="change_min_price")
     builder.button(text="⬅️ В меню", callback_data="menu")
     builder.adjust(1)
     return builder.as_markup()
