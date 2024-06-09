@@ -31,11 +31,11 @@ def main():
     dp.include_routers(
         registration_router,
         commands_router,
-        project_router,
         menu_router,
-        navigation_router,
-        profile_router,
         notifications_router,
+        project_router,
+        profile_router,
+        navigation_router,
         subscription_router,
     )
     dp.startup.register(on_startup)
@@ -64,10 +64,10 @@ async def dev():
     dp.include_routers(
         registration_router,
         commands_router,
-        profile_router,
         menu_router,
         notifications_router,
         project_router,
+        profile_router,
         navigation_router,
         subscription_router,
     )
