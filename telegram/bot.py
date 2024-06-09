@@ -53,8 +53,8 @@ def main():
 async def dev():
     from handlers.registration import router as registration_router
     from handlers.commands import router as commands_router
-    from handlers.project import router as project_router
     from handlers.menu import router as menu_router
+    from handlers.project import router as project_router
     from handlers.navigation import router as navigation_router
     from handlers.profile import router as profile_router
     from handlers.notifications import router as notifications_router
