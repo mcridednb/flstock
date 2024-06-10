@@ -231,7 +231,7 @@ services:
       dockerfile: Dockerfile
     command: >
       sh -c "python manage.py migrate --noinput &&
-      python -m gunicorn --workers=8 --timeout 120 --env DJANGO_SETTINGS_MODULE=backend.settings backend.wsgi:application --bind 0.0.0.0:8000"
+      python -m gunicorn --workers=4 --timeout 60 --env DJANGO_SETTINGS_MODULE=backend.settings backend.wsgi:application --bind 0.0.0.0:8000"
     env_file:
       - .env
     ports:
@@ -248,7 +248,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python -m celery -A backend.celery worker -l INFO --beat --uid flstock -c 4 -s /tmp/celerybeat-schedule.db
+    command: python -m celery -A backend.celery worker --beat --uid flstock -n worker.main -Q celery -E --pool=threads -c 10 --loglevel=info -s /tmp/celerybeat-schedule.db
     env_file:
       - .env
     volumes:
