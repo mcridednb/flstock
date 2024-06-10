@@ -1,5 +1,4 @@
 CATEGORIES = [{
-    "id": 11,
     "title": "Разработка и IT",
     "code": "programming",
     "subcategories": [
@@ -14,8 +13,7 @@ CATEGORIES = [{
         {"id": 81, "title": "Юзабилити, тесты и помощь", "code": "testing-audit"}
     ]
 }, {
-    "id": 15,
-    "title": "Дизайн",
+    "title": "Дизайн и графика",
     "code": "design",
     "subcategories": [
         {"id": 25, "title": "Логотип и брендинг", "code": "design-branding"},
@@ -30,9 +28,8 @@ CATEGORIES = [{
         {"id": 286, "title": "Маркетплейсы и соцсети", "code": "design-social-media"},
     ],
 }, {
-    "id": 17,
-    "title": "SEO и трафик",
-    "code": "seo",
+    "title": "Маркетинг и реклама",
+    "code": "marketing",
     "subcategories": [
         {"id": 72, "title": "Трафик", "code": "marketing-analytics"},
         {"id": 71, "title": "Семантическое ядро", "code": "marketing-seo"},

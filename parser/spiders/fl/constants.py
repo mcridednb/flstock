@@ -51,7 +51,7 @@ CATEGORIES = [{
         {"id": 475, "title": "Yii", "code": "web-development"},
     ],
 }, {
-    "title": "Дизайн",
+    "title": "Дизайн и графика",
     "code": "design",
     "subcategories": [
         {"id": 46, "title": "Логотипы", "code": "design-branding"},
