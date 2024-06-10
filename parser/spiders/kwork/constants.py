@@ -2,130 +2,66 @@ CATEGORIES = [{
     "id": 11,
     "title": "Разработка и IT",
     "code": "programming",
-    "subcategories": [{
-        "id": 38,
-        "title": "Доработка и настройка сайта",
-        "code": "web-development",
-    }, {
-        "id": 79,
-        "title": "Верстка",
-        "code": "web-development",
-    }, {
-        "id": 37,
-        "title": "Создание сайта",
-        "code": "web-development",
-    }, {
-        "id": 41,
-        "title": "Скрипты и боты",
-        "code": "script-development",
-    }, {
-        "id": 39,
-        "title": "Мобильные приложения",
-        "code": "mobile-development",
-    }, {
-        "id": 40,
-        "title": "Игры",
-        "code": "game-development",
-    }, {
-        "id": 80,
-        "title": "Десктоп программирование",
-        "code": "desktop-development",
-    }, {
-        "id": 255,
-        "title": "Сервера и хостинг",
-        "code": "servers-hosting",
-    }, {
-        "id": 81,
-        "title": "Юзабилити, тесты и помощь",
-        "code": "testing-audit",
-    }]
+    "subcategories": [
+        {"id": 38, "title": "Доработка и настройка сайта", "code": "web-development"},
+        {"id": 79, "title": "Верстка", "code": "web-development"},
+        {"id": 37, "title": "Создание сайта", "code": "web-development"},
+        {"id": 41, "title": "Скрипты и боты", "code": "script-development"},
+        {"id": 39, "title": "Мобильные приложения", "code": "mobile-development"},
+        {"id": 40, "title": "Игры", "code": "game-development"},
+        {"id": 80, "title": "Десктоп программирование", "code": "desktop-development"},
+        {"id": 255, "title": "Сервера и хостинг", "code": "servers-hosting"},
+        {"id": 81, "title": "Юзабилити, тесты и помощь", "code": "testing-audit"}
+    ]
 }, {
     "id": 15,
     "title": "Дизайн",
     "code": "design",
-    # design-branding
-    # design-web-mobile
-    # design-art
-    # design-layout
-    # design-interior-exterior
-    # design-presentations
-    # design-outdoor
-    # design-social-media
-    # design-other
-    "subcategories": [{
-        "title": "Логотип и брендинг",
-        "id": 25,
-        "code": "design-branding",
-    }, {
-        "title": "Веб и мобильный дизайн",
-        "id": 24,
-        "code": "design-web-mobile",
-    }, {
-        "title": "Арт и иллюстрации",
-        "id": 28,
-        "code": "design-art",
-    }, {
-        "title": "Полиграфия",
-        "id": 27,
-        "code": "design-layout",
-    }, {
-        "title": "Интерьер и экстерьер",
-        "id": 90,
-        "code": "design-interior-exterior",
-    }, {
-        "title": "Промышленный дизайн",
-        "id": 250,
-        "code": "design-other",
-    }, {
-        "title": "Презентации и инфографика",
-        "id": 270,
-        "code": "design-presentations",
-    }, {
-        "title": "Обработка и редактирование",
-        "id": 68,
-        "code": "design-other",
-    }, {
-        "title": "Наружная реклама",
-        "id": 272,
-        "code": "design-outdoor",
-    }, {
-        "title": "Маркетплейсы и соцсети",
-        "id": 286,
-        "code": "design-social-media",
-    }, ]
-# }, {
-#     "id": 17,
-#     "title": "SEO и трафик",
-#     "code": "seo",
-#     "subcategories": [{
-#         "title": "Трафик",
-#         "id": 72,
-#         "code": "testing-audit",
-#     }, {
-#         "title": "Семантическое ядро",
-#         "id": 71,
-#         "code": "testing-audit",
-#     }, {
-#         "title": "Ссылки",
-#         "id": 59,
-#         "code": "testing-audit",
-#     }, {
-#         "title": "Статистика и аналитика",
-#         "id": 56,
-#         "code": "testing-audit",
-#     }, {
-#         "title": "SEO аудиты, консультации",
-#         "id": 44,
-#         "code": "testing-audit",
-#     }, {
-#         "title": "Внутренняя оптимизация",
-#         "id": 43,
-#         "code": "testing-audit",
-#     }, {
-#         "title": "Продвижение сайта в топ",
-#         "id": 273,
-#         "code": "testing-audit",
-#     }]
+    "subcategories": [
+        {"id": 25, "title": "Логотип и брендинг", "code": "design-branding"},
+        {"id": 24, "title": "Веб и мобильный дизайн", "code": "design-web-mobile"},
+        {"id": 28, "title": "Арт и иллюстрации", "code": "design-art"},
+        {"id": 27, "title": "Полиграфия", "code": "design-layout"},
+        {"id": 90, "title": "Интерьер и экстерьер", "code": "design-interior-exterior"},
+        {"id": 250, "title": "Промышленный дизайн", "code": "design-other"},
+        {"id": 270, "title": "Презентации и инфографика", "code": "design-presentations"},
+        {"id": 68, "title": "Обработка и редактирование", "code": "design-other"},
+        {"id": 272, "title": "Наружная реклама", "code": "design-outdoor"},
+        {"id": 286, "title": "Маркетплейсы и соцсети", "code": "design-social-media"}
+    ]
+    # }, {
+    #     "id": 17,
+    #     "title": "SEO и трафик",
+    #     "code": "seo",
+    #     "subcategories": [{
+    #         "title": "Трафик",
+    #         "id": 72,
+    #         "code": "testing-audit",
+    #     }, {
+    #         "title": "Семантическое ядро",
+    #         "id": 71,
+    #         "code": "testing-audit",
+    #     }, {
+    #         "title": "Ссылки",
+    #         "id": 59,
+    #         "code": "testing-audit",
+    #     }, {
+    #         "title": "Статистика и аналитика",
+    #         "id": 56,
+    #         "code": "testing-audit",
+    #     }, {
+    #         "title": "SEO аудиты, консультации",
+    #         "id": 44,
+    #         "code": "testing-audit",
+    #     }, {
+    #         "title": "Внутренняя оптимизация",
+    #         "id": 43,
+    #         "code": "testing-audit",
+    #     }, {
+    #         "title": "Продвижение сайта в топ",
+    #         "id": 273,
+    #         "code": "testing-audit",
+    #     }]
 }
     # },
     # "audio-video": {
