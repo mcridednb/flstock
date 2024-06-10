@@ -27,43 +27,28 @@ CATEGORIES = [{
         {"id": 270, "title": "Презентации и инфографика", "code": "design-presentations"},
         {"id": 68, "title": "Обработка и редактирование", "code": "design-other"},
         {"id": 272, "title": "Наружная реклама", "code": "design-outdoor"},
-        {"id": 286, "title": "Маркетплейсы и соцсети", "code": "design-social-media"}
+        {"id": 286, "title": "Маркетплейсы и соцсети", "code": "design-social-media"},
+    ],
+}, {
+    "id": 17,
+    "title": "SEO и трафик",
+    "code": "seo",
+    "subcategories": [
+        {"id": 72, "title": "Трафик", "code": "marketing-analytics"},
+        {"id": 71, "title": "Семантическое ядро", "code": "marketing-seo"},
+        {"id": 59, "title": "Ссылки", "code": "marketing-seo"},
+        {"id": 56, "title": "Статистика и аналитика", "code": "marketing-analytics"},
+        {"id": 44, "title": "SEO аудиты, консультации", "code": "marketing-seo"},
+        {"id": 43, "title": "Внутренняя оптимизация", "code": "marketing-analytics"},
+        {"id": 273, "title": "Продвижение сайта в топ", "code": "marketing-seo"},
+        {"id": 113, "title": "Базы данных и клиентов", "code": "marketing-other"},
+        {"id": 112, "title": "Маркетплейсы и доски объявлений", "code": "marketing-marketplaces"},
+        {"id": 108, "title": "E-mail маркетинг и рассылки", "code": "marketing-marketing"},
+        {"id": 49, "title": "Контекстная реклама", "code": "marketing-ppc"},
+        {"id": 47, "title": "Реклама и PR", "code": "marketing-pr"},
+        {"id": 46, "title": "Соцсети и SMM", "code": "marketing-smm"},
     ]
-    # }, {
-    #     "id": 17,
-    #     "title": "SEO и трафик",
-    #     "code": "seo",
-    #     "subcategories": [{
-    #         "title": "Трафик",
-    #         "id": 72,
-    #         "code": "testing-audit",
-    #     }, {
-    #         "title": "Семантическое ядро",
-    #         "id": 71,
-    #         "code": "testing-audit",
-    #     }, {
-    #         "title": "Ссылки",
-    #         "id": 59,
-    #         "code": "testing-audit",
-    #     }, {
-    #         "title": "Статистика и аналитика",
-    #         "id": 56,
-    #         "code": "testing-audit",
-    #     }, {
-    #         "title": "SEO аудиты, консультации",
-    #         "id": 44,
-    #         "code": "testing-audit",
-    #     }, {
-    #         "title": "Внутренняя оптимизация",
-    #         "id": 43,
-    #         "code": "testing-audit",
-    #     }, {
-    #         "title": "Продвижение сайта в топ",
-    #         "id": 273,
-    #         "code": "testing-audit",
-    #     }]
-}
-    # },
+},
     # "audio-video": {
     #     "title": "Аудио, видео, съемка",
     #     "code": 7,
@@ -129,37 +114,6 @@ CATEGORIES = [{
     #         "construction-repair": {
     #             "title": "Стройка и ремонт",
     #             "code": 65,
-    #         },
-    #     }
-    # },
-
-    # "socialmedia-advertising": {
-    #     "title": "Соцсети и реклама",
-    #     "code": 45,
-    #     "subcategories": {
-    #         "databases-clients": {
-    #             "title": "Базы данных и клиентов",
-    #             "code": 113,
-    #         },
-    #         "marketplaces-ads": {
-    #             "title": "Маркетплейсы и доски объявлений",
-    #             "code": 112,
-    #         },
-    #         "email-marketing": {
-    #             "title": "E-mail маркетинг и рассылки",
-    #             "code": 108,
-    #         },
-    #         "context-advertising": {
-    #             "title": "Контекстная реклама",
-    #             "code": 49,
-    #         },
-    #         "advertising-pr": {
-    #             "title": "Реклама и PR",
-    #             "code": 47,
-    #         },
-    #         "socialmedia-smm": {
-    #             "title": "Соцсети и SMM",
-    #             "code": 46,
     #         },
     #     }
     # },
