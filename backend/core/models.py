@@ -427,7 +427,7 @@ class GPTRequest(models.Model):
         keyboard_json = json.dumps(keyboard)
         data = {
             'chat_id': self.user.chat_id,
-            'text': response["response"],
+            'text': f"*Решение заказа: {self.project.title}*",
             'parse_mode': 'Markdown',
             'reply_to_message_id': message_id,
             'reply_markup': keyboard_json,
