@@ -102,6 +102,7 @@ async def get_menu_keyboard(message_id):
     builder.button(text="👤 Редактировать профиль", callback_data="profile")
     builder.button(text="🔔 Редактировать уведомления", callback_data="notifications")
     builder.button(text="👥 Пригласить друзей", callback_data="referral")
+    builder.button(text="📝 Задания", callback_data="tasks")
     builder.button(
         text="🪙 Пополнить токены",
         callback_data=callbacks.Token(
@@ -116,7 +117,7 @@ async def get_menu_keyboard(message_id):
         ),
     )
     builder.button(text="❤️ Поддержать проект", callback_data="donate")
-    builder.button(text="🗣 Написать в тех. поддержку", callback_data="donate")
+    builder.button(text="🗣 Написать в поддержку", callback_data="support")
     builder.button(text="❌ Закрыть", callback_data="close")
     builder.adjust(1)
     return builder.as_markup()
@@ -200,7 +201,7 @@ async def get_token_keyboard():
 async def get_subscription_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(
-        text="🥳 1 месяц — 35 токенов",  # 35
+        text="👍 1 месяц — 35 токенов",  # 35
         callback_data=callbacks.Subscribe(
             action=callbacks.Action.add,
             tokens=35,

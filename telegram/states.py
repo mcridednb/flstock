@@ -26,5 +26,6 @@ class Notifications(StatesGroup):
 
 
 class GPT(StatesGroup):
+    phone = State()
     start_response = State()
     start_analyze = State()

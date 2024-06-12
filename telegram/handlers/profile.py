@@ -27,6 +27,7 @@ async def get_profile_data(chat_id, state):
 
 @router.message(Command("profile"))
 async def process_profile(message: Message, state: FSMContext) -> None:
+    await state.clear()
     profile_text = await get_profile_data(message.from_user.id, state)
     keyboard = await keyboards.get_change_profile_keyboard()
     await message.answer(profile_text, reply_markup=keyboard, parse_mode="Markdown")

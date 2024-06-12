@@ -27,10 +27,6 @@ async def process_email(message: Message, state: FSMContext):
         return
     else:
         await state.clear()
-        await message.answer(
-            "🥳 *Спасибо за регистрацию!*",
-            parse_mode=ParseMode.MARKDOWN,
-        )
         await process_start(message, state)
 
 
@@ -48,7 +44,6 @@ async def process_start(message: Message, state: FSMContext, referrer=None):
         if not user_detail.get("email"):
             await message.answer(
                 "👋 *Добро пожаловать!*\n\n"
-                "📩 *Для полноценной работы нашего бота, нам нужен ваш email.*\n\n"
                 "✏️ *Пожалуйста, введите ваш адрес электронной почты:*",
                 parse_mode=ParseMode.MARKDOWN,
             )
@@ -58,8 +53,9 @@ async def process_start(message: Message, state: FSMContext, referrer=None):
         await state.set_state(Registration.source)
         keyboard = await keyboards.get_sources_keyboard(message, state)
         await message.answer(
-            "⚙️ *Настроим вашего бота!*\n\n"
-            "🔔 Шаг 1 из 2: Выбор источников.\n\n"
+            "👍 *Спасибо!*\n\n"
+            "⚙️ *Настройка вашего бота...*\n\n"
+            "🌐 Шаг 1 из 2: Выбор источников\n\n"
             "*Пожалуйста, выберите сайты, из которых вы хотите получать уведомления:*",
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN,
@@ -94,8 +90,9 @@ async def process_next_1(callback_query: CallbackQuery, state: FSMContext) -> No
     await state.set_state(Registration.category)
     keyboard = await keyboards.get_categories_keyboard(callback_query, state)
     await callback_query.message.edit_text(
-        "🔔 Шаг 2 из 2: Выбор категорий.\n\n"
-        "*Теперь выберите категории, по которым хотите получать уведомления:*",
+        "⚙️ *Настройка вашего бота...*\n\n"
+        "📝 Шаг 2 из 2: Выбор категорий\n\n"
+        "*Теперь, выберите категории, по которым хотите получать уведомления:*",
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN,
     )
@@ -121,8 +118,9 @@ async def process_category(
         )
     else:
         await callback_query.message.edit_text(
-            "🔔 Шаг 2 из 2: Выбор категорий.\n\n"
-            "*Теперь выберите категории, по которым хотите получать уведомления:*",
+            "⚙️ *Настройка вашего бота...*\n\n"
+            "📝 Шаг 2 из 2: Выбор категорий\n\n"
+            "*Теперь, выберите категории, по которым хотите получать уведомления:*",
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN,
         )
@@ -132,9 +130,9 @@ async def process_category(
 async def process_next_2(callback_query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await callback_query.message.edit_text(
-        "🎉 *Поздравляем! Вы успешно настроили уведомления.*\n\n"
-        "🔔 Вы всегда можете изменить свои предпочтения в настройках.\n\n"
-        "📋 *Меню бота:* /menu\n"
+        "🎉 *Поздравляем, вы успешно настроили бота!*\n\n"
+        "💡 Вы всегда можете изменить свои предпочтения в настройках.\n\n"
+        "📋 *Меню бота:* /menu\n\n"
         "❓ *Помощь:* /help",
         reply_markup=await keyboards.get_close_keyboard(),
         parse_mode=ParseMode.MARKDOWN,
@@ -148,8 +146,9 @@ async def process_back(callback_query: CallbackQuery, state: FSMContext) -> None
 
     await state.set_state(Registration.category)
     await callback_query.message.edit_text(
-        "🔔 Шаг 2 из 2: Выбор категорий.\n\n"
-        "*Теперь выберите категории, по которым хотите получать уведомления:*",
+        "⚙️ *Настройка вашего бота...*\n\n"
+        "📝 Шаг 2 из 2: Выбор категорий\n\n"
+        "*Теперь, выберите категории, по которым хотите получать уведомления:*",
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN,
     )

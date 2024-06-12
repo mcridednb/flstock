@@ -162,6 +162,7 @@ class TelegramUser(models.Model):
     tokens = models.PositiveIntegerField(default=10)
     subscription_until = models.DateField(null=True, blank=True)
 
+    phone = models.CharField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
     @property
@@ -310,6 +311,38 @@ class GPTRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def _generate_gpt_request(self):
+        text = (
+            "Вот информация о фрилансере и заказе:\n"
+            "Фрилансер:\n"
+            "- Имя: ```{name}```\n"
+            "- О себе: ```{summary}```\n"
+            "- Навыки: ```{skills}```\n"
+            "- Опыт: ```{experience}```\n"
+            "Заказ:\n"
+            "- Заголовок: ```{title}```\n"
+            "- Описание: ```{description}```\n"
+            "- Цена: ```{price}```\n"
+            "- Максимальная цена: ```{price_max}```\n"
+            "Твоя задача:\n"
+            "{prompt}\n"
+            "Примечание от фрилансера (приоритет):\n"
+            "```{additional_info}```\n\n"
+            "Сформируй ответ исключительно! в структуре JSON, как в примере ниже:\n"
+            "{response_format}"
+        ).format(
+            name=self.user.name or "Не указано",
+            skills=self.user.skills or "Не указано",
+            summary=self.user.summary or "Не указано",
+            experience=self.user.experience or "Не указано",
+            title=self.project.title,
+            description=self.project.description,
+            price=self.project.price or "Не указана",
+            price_max=self.project.price_max or "Не указана",
+            prompt=self.prompt.text,
+            additional_info=self.additional_info,
+            response_format=self.prompt.response_format,
+        )
+
         self.name = self.user.name
         self.skills = self.user.skills
         self.summary = self.user.summary
@@ -317,17 +350,7 @@ class GPTRequest(models.Model):
         self.hourly_rate = self.user.hourly_rate
         self.save()
 
-        return self.prompt.text.format(
-            name=self.user.name,
-            skills=self.user.skills,
-            summary=self.user.summary,
-            experience=self.user.experience,
-            additional_info=self.additional_info,
-            title=self.project.title,
-            description=self.project.description,
-            price=self.project.price,
-            price_max=self.project.price_max,
-        ) + "\n" + str(self.prompt.response_format)
+        return text
 
     def _openai_request(self):
         request_text = self._generate_gpt_request()
@@ -386,8 +409,8 @@ class GPTRequest(models.Model):
 
         keyboard = {
             "inline_keyboard": [
-                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:answer:{self.id}"}],
-                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:complain:{self.id}"}],
+                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:{self.id}:answer:::::"}],
+                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:{self.id}:complain:::::"}],
             ]
         }
         keyboard_json = json.dumps(keyboard)
@@ -420,14 +443,14 @@ class GPTRequest(models.Model):
         }
         keyboard = {
             "inline_keyboard": [
-                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:answer:{self.id}"}],
-                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:complain:{self.id}"}],
+                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:{self.id}:answer:::::"}],
+                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:{self.id}:complain:::::"}],
             ]
         }
         keyboard_json = json.dumps(keyboard)
         data = {
             'chat_id': self.user.chat_id,
-            'text': f"*Решение заказа: {self.project.title}*",
+            'text': f"*Отчёт по заказу: {self.project.title}*",
             'parse_mode': 'Markdown',
             'reply_to_message_id': message_id,
             'reply_markup': keyboard_json,

@@ -41,6 +41,7 @@ class TelegramUserSerializer(serializers.ModelSerializer):
             "experience",
             "hourly_rate",
 
+            "phone",
             "email",
 
             "stop_words",
@@ -267,7 +268,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
         validated_data["user"] = user
         value_title_map = {
-            30: "🥳 1 месяц",
+            30: "👍 1 месяц",
             90: "💪 3 месяца",
             180: "🚀 6 месяцев",
         }

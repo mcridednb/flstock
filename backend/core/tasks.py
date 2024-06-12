@@ -120,9 +120,9 @@ def send_project_task(project_id):
     keyboard = {
         "inline_keyboard": [
             [{"text": "🌐 Перейти к заказу", "url": project.url}],
-            [{"text": "🤖️ Составить отклик (1 токен)", "callback_data": f"project:response:{project.id}:"}],
-            [{"text": "🚀 Составить решение (2 токена)", "callback_data": f"project:analyze:{project.id}:"}],
-            [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"project:complain:{project.id}:"}],
+            [{"text": "🤖️ Составить отклик (1 токен)", "callback_data": f"project:{project.id}:response:"}],
+            [{"text": "🚀 Составить отчёт (2 токена)", "callback_data": f"project:{project.id}:analyze:"}],
+            [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"project:{project.id}:complain:"}],
             [{"text": "❌ Закрыть", "callback_data": "close"}]
         ]
     }
@@ -210,11 +210,11 @@ def send_limit_exceeded_message(chat_id, delete_message_id):
     return response.json()
 
 
-def send_edit_keyboard_message(chat_id, request_id, delete_message_id, project_id):
+def send_edit_keyboard_message(chat_id, request_id, delete_message_id):
     keyboard = json.dumps({
         "inline_keyboard": [[{
             "text": "⚠️ Сообщить об ошибке",
-            "callback_data": f"gpt:{request_id}:complain:{project_id}:"
+            "callback_data": f"gpt:{request_id}:complain:::::"
         }]]
     })
 
@@ -253,5 +253,5 @@ def gpt_request(project_id, message_id, delete_message_id, chat_id, request_type
         type=request_type,
         additional_info=additional_info,
     )
-    send_edit_keyboard_message(chat_id, request.id, delete_message_id, project_id)
+    send_edit_keyboard_message(chat_id, request.id, delete_message_id)
     request.send_user_response(message_id, delete_message_id)

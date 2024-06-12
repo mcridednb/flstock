@@ -10,10 +10,13 @@ class Action(str, Enum):
     set = "set"
     start = "start"
     delete = "delete"
+
+
+class Type(str, Enum):
     response = "response"
     analyze = "analyze"
-    answer = "answer"
     complain = "complain"
+    answer = "answer"
 
 
 class Complain(str, Enum):
@@ -55,13 +58,16 @@ class Subcategory(CallbackData, prefix="subcategory"):
 
 
 class Project(CallbackData, prefix="project"):
-    action: Action
     id: int
+    type: Type
     complain: Optional[Complain] = None
 
 
 class GPTRequest(CallbackData, prefix="gpt"):
     id: Optional[int] = None
-    action: Action
+    type: Type
+    action: Optional[Action] = None
     project_id: Optional[int] = None
+    message_id: Optional[int] = None
+    delete_message_id: Optional[str] = None
     complain: Optional[Complain] = None

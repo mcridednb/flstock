@@ -51,8 +51,8 @@ async def process_menu(callback_query: CallbackQuery, state: FSMContext) -> None
 
 @router.callback_query(F.data == "referral")
 async def process_referral(callback_query: CallbackQuery, state: FSMContext) -> None:
-    link = await create_start_link(callback_query.bot, str(callback_query.from_user.id), encode=True)
     await state.clear()
+    link = await create_start_link(callback_query.bot, str(callback_query.from_user.id), encode=True)
     link = link.replace('.', '\.').replace("=", "\=").replace("_", "\_")
     await callback_query.message.answer(
         text=(

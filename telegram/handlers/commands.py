@@ -40,11 +40,11 @@ def check(member):
 
 @router.message(Command("link"))
 async def process_link(message: Message, state: FSMContext) -> None:
-    link = await create_start_link(message.bot, str(message.from_user.id), encode=True)
     await state.clear()
+    link = await create_start_link(message.bot, str(message.from_user.id), encode=True)
     await message.answer(
         text=(
-            "🎁 *Получай бонусы за друзей!*\n\n"
+            "🎁 *Приглашай друзей и получай бонусы!*\n\n"
             "Поделитесь этой ссылкой с друзьями, и вы оба получите бонусные токены!\n\n"
             "👥 *За каждого друга, который зарегистрируется по вашей ссылке, вы получите 10 токенов.*\n"
             "🎁 *Ваш друг также получит 10 токенов.*\n\n"
