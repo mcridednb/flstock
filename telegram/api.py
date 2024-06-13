@@ -145,3 +145,11 @@ async def add_subscription(chat_id, tokens, value, delete_message_id):
         "delete_message_id": delete_message_id,
     }
     return await api_call(hdrs.METH_POST, endpoint, json=data)
+
+
+async def tasks_list(message):
+    endpoint = "tasks/"
+    params = {
+        "chat_id": message.from_user.id,
+    }
+    return await api_call(hdrs.METH_GET, endpoint, params=params)

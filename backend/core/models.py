@@ -308,6 +308,9 @@ class GPTRequest(models.Model):
     input_tokens = models.IntegerField(null=True, blank=True)  # $5
     output_tokens = models.IntegerField(null=True, blank=True)  # $15
 
+    gpt_request = models.TextField(null=True, blank=True)
+    gpt_response = models.JSONField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def _generate_gpt_request(self):
@@ -348,6 +351,7 @@ class GPTRequest(models.Model):
         self.summary = self.user.summary
         self.experience = self.user.experience
         self.hourly_rate = self.user.hourly_rate
+        self.gpt_request = text
         self.save()
 
         return text
@@ -366,8 +370,12 @@ class GPTRequest(models.Model):
             messages=messages,
         )
         response_content = completion.choices[0].message.content
-        # TODO: tokens
-        return json.loads(response_content)
+        response = json.loads(response_content)
+        self.gpt_response = response
+        self.input_tokens = completion.usage.prompt_tokens
+        self.output_tokens = completion.usage.completion_tokens
+        self.save()
+        return response
 
     @property
     def _template_name(self):
@@ -409,8 +417,8 @@ class GPTRequest(models.Model):
 
         keyboard = {
             "inline_keyboard": [
-                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:{self.id}:answer:::::"}],
-                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:{self.id}:complain:::::"}],
+                # [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:{self.id}:answer:::::"}],
+                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:{self.id}:complain::{self.project.id}:::"}],
             ]
         }
         keyboard_json = json.dumps(keyboard)
@@ -443,8 +451,8 @@ class GPTRequest(models.Model):
         }
         keyboard = {
             "inline_keyboard": [
-                [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:{self.id}:answer:::::"}],
-                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:{self.id}:complain:::::"}],
+                # [{"text": "✅ Продолжить диалог", "callback_data": f"gpt:{self.id}:answer:::::"}],
+                [{"text": "⚠️ Сообщить об ошибке", "callback_data": f"gpt:{self.id}:complain::{self.project.id}:::"}],
             ]
         }
         keyboard_json = json.dumps(keyboard)

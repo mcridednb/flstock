@@ -71,3 +71,8 @@ class GPTRequest(CallbackData, prefix="gpt"):
     message_id: Optional[int] = None
     delete_message_id: Optional[str] = None
     complain: Optional[Complain] = None
+
+
+class Task(CallbackData, prefix="task"):
+    action: Action
+    url: str

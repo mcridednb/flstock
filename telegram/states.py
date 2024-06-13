@@ -29,3 +29,8 @@ class GPT(StatesGroup):
     phone = State()
     start_response = State()
     start_analyze = State()
+    complain = State()
+
+
+class Menu(StatesGroup):
+    support = State()

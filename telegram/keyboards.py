@@ -97,12 +97,22 @@ async def get_close_keyboard():
     return builder.as_markup()
 
 
+async def get_cancel_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="🚫 Отмена",
+        callback_data="close",
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
 async def get_menu_keyboard(message_id):
     builder = InlineKeyboardBuilder()
     builder.button(text="👤 Редактировать профиль", callback_data="profile")
     builder.button(text="🔔 Редактировать уведомления", callback_data="notifications")
     builder.button(text="👥 Пригласить друзей", callback_data="referral")
-    builder.button(text="📝 Задания", callback_data="tasks")
+    # builder.button(text="📝 Задания", callback_data="tasks")
     builder.button(
         text="🪙 Пополнить токены",
         callback_data=callbacks.Token(
@@ -224,5 +234,36 @@ async def get_subscription_keyboard():
             value=180,
         ),
     )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+async def get_tasks_keyboard(message, state):
+    tasks, _ = await api.tasks_list(message)
+    builder = InlineKeyboardBuilder()
+    for task in tasks:
+        title = task["title"]
+        if task["done"]:
+            title = f"✅ {title}"
+        builder.button(
+            text=title,
+            callback_data=callbacks.Task(
+                action=callbacks.Action.set,
+                code=source["code"],
+            )
+        )
+
+    state = await state.get_state()
+    if state in [Registration.source]:
+        builder.button(
+            text="Далее ➡️",
+            callback_data="next",
+        )
+    else:
+        builder.button(
+            text="⬅️ Назад",
+            callback_data="notifications",
+        )
+
     builder.adjust(1)
     return builder.as_markup()

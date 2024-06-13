@@ -25,6 +25,7 @@ def main():
     from handlers.notifications import router as notifications_router
     from handlers.subscription import router as subscription_router
     from handlers.project import router as project_router
+    from handlers.support import router as support_router
 
     redis_client = redis.StrictRedis(host=settings.redis_host, port=settings.redis_port, db=3)
     dp = Dispatcher(storage=RedisStorage(redis=redis_client))
@@ -37,6 +38,7 @@ def main():
         navigation_router,
         subscription_router,
         project_router,
+        support_router,
     )
     dp.startup.register(on_startup)
     app = web.Application()
@@ -59,6 +61,7 @@ async def dev():
     from handlers.notifications import router as notifications_router
     from handlers.subscription import router as subscription_router
     from handlers.project import router as project_router
+    from handlers.support import router as support_router
 
     dp = Dispatcher()
     dp.include_routers(
@@ -70,6 +73,7 @@ async def dev():
         navigation_router,
         subscription_router,
         project_router,
+        support_router,
     )
     await bot.delete_webhook()
     await dp.start_polling(bot)

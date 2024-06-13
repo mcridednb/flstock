@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     webhook_path: str = "/webhook"
     yookassa_account_id: str
     yookassa_secret_key: str
+    base_url: str
 
 
 settings = Settings()
