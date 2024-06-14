@@ -374,7 +374,7 @@ async def process_project_complain(
         chat_id=-1002238232891,
         text=(
             f"*Ошибка:*\n"
-            f"📑 Заказ: [Заказ #{callback_data.id}]({settings.BASE_URL}/admin/core/project/{callback_data.id}/change/)\n"
+            f"📑 Заказ: [Заказ #{callback_data.id}]({settings.base_url}/admin/core/project/{callback_data.id}/change/)\n"
             f"🧓 Пользователь: {callback_query.from_user.id}\n"
             f"❔ Причина: {complain_map[callback_data.complain]}"
         ),
@@ -464,12 +464,12 @@ async def send_gpt_complain(message: Message, state: FSMContext) -> None:
     if data["request_id"]:
         request_text = (
             f"🤖 Запрос: "
-            f"[Запрос #{data['request_id']}]({settings.BASE_URL}/admin/core/gptrequest/{data['request_id']}/change/)\n"
+            f"[Запрос #{data['request_id']}]({settings.base_url}/admin/core/gptrequest/{data['request_id']}/change/)\n"
         )
 
     text = (
         f"📩 Ошибка:\n"
-        f"📑 Заказ: [Заказ #{data['project_id']}]({settings.BASE_URL}/admin/core/project/{data['project_id']}/change/)\n"
+        f"📑 Заказ: [Заказ #{data['project_id']}]({settings.base_url}/admin/core/project/{data['project_id']}/change/)\n"
         + request_text +
         f"🧓 Пользователь: {message.from_user.id}\n\n"
         f"{message.text}"
