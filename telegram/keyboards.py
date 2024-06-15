@@ -126,7 +126,7 @@ async def get_menu_keyboard(message_id):
             message_id=message_id
         ),
     )
-    builder.button(text="❤️ Поддержать проект", callback_data="donate")
+    # builder.button(text="❤️ Поддержать проект", callback_data="donate")
     builder.button(text="🗣 Написать в поддержку", callback_data="support")
     builder.button(text="❌ Закрыть", callback_data="close")
     builder.adjust(1)
@@ -148,7 +148,7 @@ async def get_balance_keyboard(message_id):
             message_id=message_id
         ),
     )
-    builder.button(text="❤️ Поддержать проект", callback_data="donate")
+    # builder.button(text="❤️ Поддержать проект", callback_data="donate")
     builder.button(text="❌ Закрыть", callback_data="close")
     builder.adjust(1)
     return builder.as_markup()

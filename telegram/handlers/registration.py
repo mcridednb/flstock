@@ -132,8 +132,7 @@ async def process_next_2(callback_query: CallbackQuery, state: FSMContext) -> No
     await callback_query.message.edit_text(
         "🎉 *Поздравляем, вы успешно настроили бота!*\n\n"
         "💡 Вы всегда можете изменить свои предпочтения в настройках.\n\n"
-        "📋 *Меню бота:* /menu\n\n"
-        "❓ *Помощь:* /help",
+        "📋 *Меню бота:* /menu\n\n",
         reply_markup=await keyboards.get_close_keyboard(),
         parse_mode=ParseMode.MARKDOWN,
     )
