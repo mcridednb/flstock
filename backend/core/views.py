@@ -41,8 +41,8 @@ class RegistrationSuccessView(APIView):
     def post(self, request, chat_id, *args, **kwargs):
         user = get_object_or_404(TelegramUser, chat_id=chat_id)
         if not user.registration_completed and user.referrer:
-            user.send_bonus("Регистрация по реферальной ссылке", 10)
-            user.referrer.send_bonus("Регистрация по реферальной ссылке", 10)
+            user.send_bonus("Регистрация по реферальной ссылке", 5)
+            user.referrer.send_bonus("Регистрация по реферальной ссылке", 5)
         user.registration_completed = True
         user.save()
         return JsonResponse({"detail": "Registration completed!"}, status=status.HTTP_200_OK)

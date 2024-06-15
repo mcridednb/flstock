@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Анализ заказа</title>
+    <title>Отчёт по заказу</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,32 +35,14 @@
             background-color: #f2f2f2;
         }
 
-        .copy-button {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 5px 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        .copy-button:hover {
-            background-color: #0056b3;
-        }
-
         .response-container {
             position: relative;
-        }
-
-        .copy-button-container {
-            margin-top: 10px;
         }
 
     </style>
 </head>
 <body>
-    <div class="heading">Анализ заказа</div>
+    <div class="heading">Отчёт по заказу</div>
 
     <div class="subheading">Название проекта:</div>
     <div>{{ response.project_title }}</div>
@@ -106,5 +88,11 @@
 
     <div class="subheading">Оценка:</div>
     <div>{{ response.rate }} / 5 - Оценка, которая оценивает насколько проект попадает в опыт фрилансера.</div>
+
+    <div class="subheading">Отклик:</div>
+    <div class="response-container">
+        <div id="responseText">{{ response.response }}</div>
+    </div>
+
 </body>
 </html>

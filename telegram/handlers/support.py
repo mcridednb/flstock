@@ -10,7 +10,7 @@ import states
 router = Router()
 
 
-@router.message(Command("support"))
+@router.message(Command("feedback"))
 async def process_support(message: Message, state: FSMContext) -> None:
     await state.clear()
     keyboard = await keyboards.get_close_keyboard()

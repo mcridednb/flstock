@@ -181,6 +181,10 @@ async def get_change_profile_keyboard():
 async def get_token_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(
+        text="👥 Пригласить друзей",
+        callback_data="referral",
+    )
+    builder.button(
         text="🪙 40 токенов — 190₽",  # 4,75
         callback_data=callbacks.Token(
             action=callbacks.Action.add,
