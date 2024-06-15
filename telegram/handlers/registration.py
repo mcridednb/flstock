@@ -41,19 +41,19 @@ async def process_start(message: Message, state: FSMContext, referrer=None):
     user_detail, status = await api.user_detail(message.from_user.id)
     if status == 404 or not user_detail["registration_completed"]:
         response, status = await api.user_create(message, referrer)
-        if not user_detail.get("email"):
-            await message.answer(
-                "👋 *Добро пожаловать!*\n\n"
-                "✏️ *Пожалуйста, введите ваш адрес электронной почты:*",
-                parse_mode=ParseMode.MARKDOWN,
-            )
-            await state.set_state(Registration.email)
-            return
+        # if not user_detail.get("email"):
+        #     await message.answer(
+        #         "👋 *Добро пожаловать!*\n\n"
+        #         "✏️ *Пожалуйста, введите ваш адрес электронной почты:*",
+        #         parse_mode=ParseMode.MARKDOWN,
+        #     )
+        #     await state.set_state(Registration.email)
+        #     return
 
         await state.set_state(Registration.source)
         keyboard = await keyboards.get_sources_keyboard(message, state)
         await message.answer(
-            "👍 *Спасибо!*\n\n"
+            "👋 *Добро пожаловать!*\n\n"
             "⚙️ *Настройка вашего бота...*\n\n"
             "🌐 Шаг 1 из 2: Выбор источников\n\n"
             "*Пожалуйста, выберите сайты, из которых вы хотите получать уведомления:*",
