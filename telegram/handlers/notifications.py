@@ -82,7 +82,7 @@ async def process_category(
     keyboard = await keyboards.get_subscriptions_keyboard(callback_query.from_user.id, callback_data.code)
     if len(keyboard.inline_keyboard) == 1:
         await callback_query.message.edit_text(
-            "*😔 К сожалению, выбранная категория сейчас недоступна.\n"
+            "*Выбранная категория сейчас в разработке.\n"
             "Пожалуйста, выберите другую категорию.*",
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN,

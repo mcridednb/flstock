@@ -57,6 +57,13 @@ CATEGORIES = [{
         {"id": "marketing_pr", "title": "PR-менеджмент", "code": "marketing-pr"},
         {"id": "marketing_other", "title": "Разное", "code": "marketing-other"},
     ],
+}, {
+    "title": "Аудио и видео",
+    "code": "audio-video",
+    "subcategories": [
+        {"id": "other_video", "title": "Видео", "code": "video"},
+        {"id": "other_audio", "title": "Аудио", "code": "audio"},
+    ],
 }]
 
 SUBCATEGORIES_REVERSE = {

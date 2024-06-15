@@ -45,37 +45,18 @@ CATEGORIES = [{
         {"id": 47, "title": "Реклама и PR", "code": "marketing-pr"},
         {"id": 46, "title": "Соцсети и SMM", "code": "marketing-smm"},
     ]
-},
-    # "audio-video": {
-    #     "title": "Аудио, видео, съемка",
-    #     "code": 7,
-    #     "subcategories": {
-    #         "audio-editing": {
-    #             "title": "Редактирование аудио",
-    #             "code": 106,
-    #         },
-    #         "video-shooting": {
-    #             "title": "Видеосъемка и монтаж",
-    #             "code": 78,
-    #         },
-    #         "logo-animation": {
-    #             "title": "Интро и анимация логотипа",
-    #             "code": 77,
-    #         },
-    #         "video-clips": {
-    #             "title": "Видеоролики",
-    #             "code": 76,
-    #         },
-    #         "music-songs": {
-    #             "title": "Музыка и песни",
-    #             "code": 23,
-    #         },
-    #         "audio-recording": {
-    #             "title": "Аудиозапись и озвучка",
-    #             "code": 20,
-    #         },
-    #     }
-    # },
+}, {
+        "title": "Аудио, видео, съемка",
+        "code": "audio-video",
+        "subcategories": [
+            {"id": 106, "title": "Редактирование аудио", "code": "audio"},
+            {"id": 78, "title": "Видеосъемка и монтаж", "code": "video"},
+            {"id": 77, "title": "Интро и анимация логотипа", "code": "video"},
+            {"id": 76, "title": "Видеоролики", "code": "video"},
+            {"id": 23, "title": "Музыка и песни", "code": "audio"},
+            {"id": 20, "title": "Аудиозапись и озвучка", "code": "audio"}
+        ]
+    },
     # "business-life": {
     #     "title": "Бизнес и жизнь",
     #     "code": 83,

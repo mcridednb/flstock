@@ -192,6 +192,27 @@ CATEGORIES = [{
         {"id": 456, "title": "Товарные карточки", "code": "marketing-marketplaces"},
         {"id": 339, "title": "Яндекс.Маркет", "code": "marketing-marketplaces"}
     ]
+}, {
+    "title": "Аудио и видео",
+    "code": "audio-video",
+    "subcategories": [
+        {"id": 25, "title": "Аудиомонтаж", "code": "audio"},
+        {"id": 73, "title": "Видеодизайн", "code": "video"},
+        {"id": 264, "title": "Видеоинфографика", "code": "video"},
+        {"id": 117, "title": "Видеомонтаж", "code": "video"},
+        {"id": 266, "title": "Видеопрезентации", "code": "video"},
+        {"id": 163, "title": "Видеосъемка", "code": "video"},
+        {"id": 437, "title": "Визуальные эффекты (VFX)", "code": "video"},
+        {"id": 162, "title": "Диктор", "code": "audio"},
+        {"id": 24, "title": "Музыка/Звуки", "code": "audio"},
+        {"id": 274, "title": "Промышленная фотосъемка", "code": "photo"},
+        {"id": 268, "title": "Режиссура", "code": "audio"},
+        {"id": 112, "title": "Рекламная/Постановочная фотография", "code": "photo"},
+        {"id": 55, "title": "Ретуширование/Коллажи", "code": "photo"},
+        {"id": 201, "title": "Создание субтитров", "code": "video"},
+        {"id": 115, "title": "Фото Архитектуры/Интерьеров", "code": "photo"},
+        {"id": 71, "title": "Художественная/Арт фотография", "code": "photo"}
+    ]
 }]
 
 SUBCATEGORIES_REVERSE = {
