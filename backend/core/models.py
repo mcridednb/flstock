@@ -524,6 +524,13 @@ class Payment(models.Model):
         Configuration.account_id = settings.YOOKASSA_ACCOUNT_ID
         Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 
+        customer = {
+            "phone": self.user.phone,
+        }
+        if not self.user.phone:
+            customer = {
+                "email": self.user.email,
+            }
         self.idempotent_uuid = uuid.uuid4()
         payment = YooKassaPayment.create({
             "amount": {
@@ -537,9 +544,7 @@ class Payment(models.Model):
             "capture": True,
             "description": f"Заказ №{self.id}",
             "receipt": {
-                "customer": {
-                    "email": self.user.email,
-                },
+                "customer": customer,
                 "items": [
                     {
                         "description": "Информационно-консультационные услуги",
