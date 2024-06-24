@@ -239,7 +239,8 @@ CATEGORIES = [{
         {"id": 40, "title": "Тексты/Речи/Рапорты", "code": "writing_misc"},
         {"id": 12, "title": "Технический перевод", "code": "writing_translate"},
         {"id": 106, "title": "ТЗ/Help/Мануал", "code": "writing_misc"},
-        {"id": 13, "title": "Художественный перевод", "code": "writing_translate"}
+        {"id": 13, "title": "Художественный перевод", "code": "writing_translate"},
+        {"id": 126, "title": "Переводы/Тексты", "code": "writing_translate"},
     ]
 }]
 

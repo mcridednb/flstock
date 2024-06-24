@@ -105,32 +105,6 @@ CATEGORIES = [{
     #         },
     #     }
     # },
-    # "texts-translations": {
-    #     "title": "Тексты и переводы",
-    #     "code": 5,
-    #     "subcategories": {
-    #         "resumes-vacancies": {
-    #             "title": "Резюме и вакансии",
-    #             "code": 235,
-    #         },
-    #         "text-typing": {
-    #             "title": "Набор текста",
-    #             "code": 75,
-    #         },
-    #         "sales-business-texts": {
-    #             "title": "Продающие и бизнес-тексты",
-    #             "code": 74,
-    #         },
-    #         "site-texts": {
-    #             "title": "Тексты и наполнение сайта",
-    #             "code": 73,
-    #         },
-    #         "translations": {
-    #             "title": "Переводы",
-    #             "code": 35,
-    #         },
-    #     }
-    # }
 ]
 
 SUBCATEGORIES_REVERSE = {
