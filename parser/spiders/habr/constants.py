@@ -64,6 +64,23 @@ CATEGORIES = [{
         {"id": "other_video", "title": "Видео", "code": "video"},
         {"id": "other_audio", "title": "Аудио", "code": "audio"},
     ],
+}, {
+    "title": "Тексты и переводы",
+    "code": "writing",
+    "subcategories": [
+        {"id": "content_copywriting", "title": "Копирайтинг", "code": "writing_copywriting"},
+        {"id": "content_rewriting", "title": "Рерайтинг", "code": "writing_copywriting"},
+        {"id": "content_audio", "title": "Расшифровка аудио и видео", "code": "writing_misc"},
+        {"id": "content_article", "title": "Статьи и новости", "code": "writing_journalism"},
+        {"id": "content_scenarios", "title": "Сценарии", "code": "writing_creative"},
+        {"id": "content_naming", "title": "Нейминг и слоганы", "code": "writing_advertising"},
+        {"id": "content_correction", "title": "Редактура и корректура", "code": "writing_editing"},
+        {"id": "content_translations", "title": "Переводы", "code": "writing_translate"},
+        {"id": "content_coursework", "title": "Рефераты, дипломы, курсовые", "code": "writing_misc"},
+        {"id": "content_specification", "title": "Техническая документация", "code": "writing_misc"},
+        {"id": "content_management", "title": "Контент-менеджмент", "code": "writing_misc"},
+        {"id": "content_other", "title": "Разное", "code": "writing_misc"},
+    ],
 }]
 
 SUBCATEGORIES_REVERSE = {
