@@ -49,7 +49,7 @@ class RegistrationSuccessView(APIView):
 
 
 class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('order')
     serializer_class = CategorySerializer
 
     def get_serializer_context(self):
@@ -69,7 +69,7 @@ class SourceListView(generics.ListAPIView):
 
 
 class SubcategoryListView(generics.ListAPIView):
-    queryset = Subcategory.objects.all()
+    queryset = Subcategory.objects.all().order_by('order')
     serializer_class = SubcategorySerializer
 
     def get_queryset(self):

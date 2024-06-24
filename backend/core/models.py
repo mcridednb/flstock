@@ -31,6 +31,7 @@ class Category(models.Model):
     title = models.CharField(max_length=100)
     code = models.CharField(max_length=100, unique=True)
     telegram_group_id = models.CharField(max_length=255, null=True, help_text="-100...")
+    order = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -44,6 +45,7 @@ class Subcategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     code = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=100)
+    order = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
