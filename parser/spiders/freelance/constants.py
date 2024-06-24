@@ -44,11 +44,11 @@ CATEGORIES = [{
     }, {
         "id": "696",
         "title": "Crypto/NFT",
-        "code": "ai-blockchain",
+        "code": "blockchain",
     }, {
         "id": "724",
         "title": "Искусственный интеллект",
-        "code": "ai-blockchain",
+        "code": "neural-networks",
     }, {
         "id": "4",
         "title": "Программирование и IT",
