@@ -116,7 +116,6 @@ def send_channel_task(chat_id, caption, file_id, url, project_url):
     caption = (
         f"{caption}\n\n"
         f'<a href="https://t.me/freelancerai_info">Новости проекта</a> | <a href="https://t.me/freelancerai_catalog">Каталог каналов</a>\n\n'
-        f'<a href="https://t.me/freelancerai_it">Подпишись</a>'
     )
     payload = {
         "chat_id": chat_id,
