@@ -18,14 +18,13 @@ class ProjectAdmin(admin.ModelAdmin):
     pass
 
 
+class SubcategoryAdmin(admin.TabularInline):
+    model = Subcategory
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(Subcategory)
-class SubcategoryAdmin(admin.ModelAdmin):
-    pass
+    inlines = [SubcategoryAdmin, ]
 
 
 @admin.register(CategorySubscription)
