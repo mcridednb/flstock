@@ -46,17 +46,27 @@ CATEGORIES = [{
         {"id": 46, "title": "Соцсети и SMM", "code": "marketing-smm"},
     ]
 }, {
-        "title": "Аудио, видео, съемка",
-        "code": "audio-video",
-        "subcategories": [
-            {"id": 106, "title": "Редактирование аудио", "code": "audio"},
-            {"id": 78, "title": "Видеосъемка и монтаж", "code": "video"},
-            {"id": 77, "title": "Интро и анимация логотипа", "code": "video"},
-            {"id": 76, "title": "Видеоролики", "code": "video"},
-            {"id": 23, "title": "Музыка и песни", "code": "audio"},
-            {"id": 20, "title": "Аудиозапись и озвучка", "code": "audio"}
-        ]
-    },
+    "title": "Аудио, видео, съемка",
+    "code": "audio-video",
+    "subcategories": [
+        {"id": 106, "title": "Редактирование аудио", "code": "audio"},
+        {"id": 78, "title": "Видеосъемка и монтаж", "code": "video"},
+        {"id": 77, "title": "Интро и анимация логотипа", "code": "video"},
+        {"id": 76, "title": "Видеоролики", "code": "video"},
+        {"id": 23, "title": "Музыка и песни", "code": "audio"},
+        {"id": 20, "title": "Аудиозапись и озвучка", "code": "audio"}
+    ]
+}, {
+    "title": "Тексты и переводы",
+    "code": "writing",
+    "subcategories": [
+        {"id": 235, "title": "Резюме и вакансии", "code": "writing_misc"},
+        {"id": 75, "title": "Набор текста", "code": "writing_misc"},
+        {"id": 74, "title": "Продающие и бизнес-тексты", "code": "writing_advertising"},
+        {"id": 73, "title": "Тексты и наполнение сайта", "code": "writing_misc"},
+        {"id": 35, "title": "Переводы", "code": "writing_translate"},
+    ]
+},
     # "business-life": {
     #     "title": "Бизнес и жизнь",
     #     "code": 83,
