@@ -213,6 +213,34 @@ CATEGORIES = [{
         {"id": 115, "title": "Фото Архитектуры/Интерьеров", "code": "photo"},
         {"id": 71, "title": "Художественная/Арт фотография", "code": "photo"}
     ]
+}, {
+    "title": "Тексты и переводы",
+    "code": "writing",
+    "subcategories": [
+        {"id": 10, "title": "Контент-менеджер", "code": "writing_misc"},
+        {"id": 43, "title": "Копирайтинг", "code": "writing_copywriting"},
+        {"id": 32, "title": "Новости/Пресс-релизы", "code": "writing_journalism"},
+        {"id": 102, "title": "Перевод корреспонденции/деловой переписки", "code": "writing_translate"},
+        {"id": 235, "title": "Перевод текстов общей тематики", "code": "writing_translate"},
+        {"id": 105, "title": "Постинг", "code": "writing_journalism"},
+        {"id": 200, "title": "Расшифровка аудио и видеозаписей", "code": "writing_misc"},
+        {"id": 103, "title": "Редактирование/Корректура", "code": "writing_editing"},
+        {"id": 41, "title": "Резюме", "code": "writing_misc"},
+        {"id": 104, "title": "Рерайтинг", "code": "writing_copywriting"},
+        {"id": 108, "title": "Рефераты/Курсовые/Дипломы", "code": "writing_misc"},
+        {"id": 70, "title": "Сканирование и распознавание", "code": "writing_misc"},
+        {"id": 39, "title": "Слоганы/Нейминг", "code": "writing_advertising"},
+        {"id": 290, "title": "Составление текстовых скриптов и шаблонов", "code": "writing_misc"},
+        {"id": 107, "title": "Статьи", "code": "writing_journalism"},
+        {"id": 44, "title": "Стихи/Поэмы/Эссе", "code": "writing_creative"},
+        {"id": 203, "title": "Сценарии", "code": "writing_creative"},
+        {"id": 382, "title": "Тексты для маркетплейсов", "code": "writing_advertising"},
+        {"id": 233, "title": "Тексты на иностранных языках", "code": "writing_misc"},
+        {"id": 40, "title": "Тексты/Речи/Рапорты", "code": "writing_misc"},
+        {"id": 12, "title": "Технический перевод", "code": "writing_translate"},
+        {"id": 106, "title": "ТЗ/Help/Мануал", "code": "writing_misc"},
+        {"id": 13, "title": "Художественный перевод", "code": "writing_translate"}
+    ]
 }]
 
 SUBCATEGORIES_REVERSE = {
