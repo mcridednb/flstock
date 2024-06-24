@@ -1,4 +1,5 @@
 import json
+import random
 from datetime import datetime
 from io import BytesIO
 
@@ -82,6 +83,47 @@ def check_words(words, title, description):
     return False
 
 
+@app.task
+def send_user_task(chat_id, caption, keyboard, file_id, url):
+    payload = {
+        "chat_id": chat_id,
+        "caption": caption,
+        "reply_markup": json.dumps(keyboard),
+        "photo": file_id,
+    }
+    response = requests.post(url, data=payload)
+    if response.status_code != 200:
+        print(f"Failed to send message to {chat_id}: {response.text}")
+
+
+@app.task
+def send_channel_task(chat_id, caption, file_id, url, project_url):
+    if not random.choice([True, False, False]):
+        return
+
+    keyboard = json.dumps({
+        "inline_keyboard": [
+            [{"text": "🌐 Перейти к заказу", "url": project_url}],
+            [{"text": "⚡ Больше заказов", "url": f"https://t.me/freelancerai_bot"}],
+        ]
+    })
+    caption = (
+        f"{caption}\n\n"
+        f'<a href="https://t.me/freelancerai_info">Новости проекта</a> | <a href="https://t.me/freelancerai_catalog">Каталог каналов</a>\n\n'
+        f'<a href="https://t.me/freelancerai_it">Подпишись</a>'
+    )
+    payload = {
+        "chat_id": chat_id,
+        "caption": caption,
+        "reply_markup": keyboard,
+        "photo": file_id,
+        "parse_mode": "HTML",
+    }
+    response = requests.post(url, data=payload)
+    if response.status_code != 200:
+        print(f"Failed to send message to {chat_id}: {response.text}")
+
+
 @app.task(name="send_project_task")
 def send_project_task(project_id):
     project = Project.objects.get(id=project_id)
@@ -92,7 +134,7 @@ def send_project_task(project_id):
     time_diff = now() - order_created_datetime
     minutes_ago = int(time_diff.total_seconds() / 60)
 
-    if minutes_ago > 120:
+    if minutes_ago > 600:
         return
 
     title = html2text.html2text(project.title).strip()
@@ -147,6 +189,11 @@ def send_project_task(project_id):
         }
     )
 
+    if len(description) > 350:
+        caption = f"{description[:350]}...."
+    else:
+        caption = description
+
     file_id = response.json()["result"]["photo"][-1]["file_id"]
 
     for user in users:
@@ -167,21 +214,12 @@ def send_project_task(project_id):
             if not has_keyword:
                 continue
 
-        if len(description) > 350:
-            caption = f"{description[:350]}...."
-        else:
-            caption = description
+        send_user_task.delay(user.chat_id, caption, keyboard, file_id, url)
 
-        payload = {
-            "chat_id": user.chat_id,
-            "caption": caption,
-            "reply_markup": json.dumps(keyboard),
-            "photo": file_id,
-        }
-        response = requests.post(url, data=payload)
-        if response.status_code != 200:
-            print(f"Failed to send message to {user.chat_id}: {response.text}")
-            return
+    if project.subcategory.category.telegram_group_id:
+        send_channel_task.delay(
+            project.subcategory.category.telegram_group_id, caption, file_id, url, project.url
+        )
 
     project.status = Project.StatusChoices.DISTRIBUTED
     project.save()
@@ -222,7 +260,7 @@ def send_edit_keyboard_message(chat_id, request_id, delete_message_id):
         'chat_id': chat_id,
         'message_id': delete_message_id,
         'parse_mode': 'Markdown',
-        'reply_markup': keyboard
+        'reply_markup': keyboard,
     }
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/editMessageReplyMarkup"
     response = requests.post(url, json=data)

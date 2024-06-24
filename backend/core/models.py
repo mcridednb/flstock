@@ -30,6 +30,7 @@ class Source(models.Model):
 class Category(models.Model):
     title = models.CharField(max_length=100)
     code = models.CharField(max_length=100, unique=True)
+    telegram_group_id = models.CharField(max_length=255, null=True, help_text="-100...")
 
     def __str__(self):
         return self.title
