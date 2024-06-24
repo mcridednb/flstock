@@ -74,7 +74,7 @@ class SubcategoryListView(generics.ListAPIView):
 
     def get_queryset(self):
         category = self.request.query_params.get("category")
-        return Subcategory.objects.filter(category__code=category)
+        return Subcategory.objects.filter(category__code=category).order_by('order')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
