@@ -85,11 +85,17 @@ def check_words(words, title, description):
 
 @app.task
 def send_user_task(chat_id, caption, keyboard, file_id, url):
+    caption = (
+        f"{caption}\n\n"
+        f'<a href="https://t.me/freelancerai_info">Новости проекта</a> | <a href="https://t.me/freelancerai_catalog">Каталог каналов</a>'
+    )
+
     payload = {
         "chat_id": chat_id,
         "caption": caption,
         "reply_markup": json.dumps(keyboard),
         "photo": file_id,
+        "parse_mode": "HTML",
     }
     response = requests.post(url, data=payload)
     if response.status_code != 200:
