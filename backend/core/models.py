@@ -86,6 +86,7 @@ class Project(models.Model):
         default=StatusChoices.ACCEPTED,
     )
     currency_symbol = models.CharField(max_length=255, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} ({self.source})"
@@ -610,3 +611,25 @@ class Transaction(models.Model):
 
 class Complain(models.Model):
     ...
+
+
+class Vacancy(models.Model):
+    vacancy_id = models.IntegerField(unique=True)
+    title = models.CharField(max_length=255)
+    salary_from = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    salary_to = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    offers = models.IntegerField(default=0)
+    date_published = models.BigIntegerField()
+    currency_symbol = models.CharField(max_length=255, default="", null=True, blank=True)
+    company = models.CharField(max_length=255, default="")
+
+    url = models.URLField(max_length=200)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title}"
+
+    class Meta:
+        verbose_name = "Вакансия"
+        verbose_name_plural = "Вакансии"

@@ -168,10 +168,10 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
 
 CELERY_BEAT_SCHEDULE = {
-    # "clean_gpt_limits": {
-    #     "task": "clean_gpt_limits",
-    #     "schedule": crontab(minute='0', hour='0'),  # выполняется каждый день в 00:00 по Москве
-    # },
+    "send_statistic_project": {
+        "task": "send_statistic_project",
+        "schedule": crontab(minute='0', hour='0'),
+    },
 }
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")

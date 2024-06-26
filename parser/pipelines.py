@@ -6,7 +6,7 @@ import pymongo.database
 from celery import Celery
 from scrapy import Spider
 
-from models import BaseProject
+from models import BaseProject, BaseVacancy
 
 
 class FlstockPipeline:
@@ -47,7 +47,8 @@ class MongoPipeline:
 
 class CeleryPipeline:
     PROJECT_NAME = "backend"
-    CELERY_TASK_NAME = "core.tasks.process_order_task"
+    PROJECT_CELERY_TASK_NAME = "core.tasks.process_project_task"
+    VACANCY_CELERY_TASK_NAME = "core.tasks.process_vacancy_task"
 
     def open_spider(self, spider):
         self.app = Celery(
@@ -64,10 +65,15 @@ class CeleryPipeline:
         self.app.close()
 
     def process_item(self, item, spider):
-        message = BaseProject.parse_obj(item)
+        task_name = self.PROJECT_CELERY_TASK_NAME
+        try:
+            message = BaseProject.parse_obj(item)
+        except Exception as exc:
+            message = BaseVacancy.parse_obj(item)
+            task_name = self.VACANCY_CELERY_TASK_NAME
 
         self.app.send_task(
-            self.CELERY_TASK_NAME,
+            task_name,
             args=[message.dict()]
         )
 

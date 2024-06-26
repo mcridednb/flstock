@@ -32,6 +32,9 @@ pilmoji = "*"
 emoji = "==1.7.0"
 pydantic-settings = "*"
 yookassa = "*"
+pandas = "*"
+seaborn = "*"
+matplotlib = "*"
 
 [dev-packages]
 

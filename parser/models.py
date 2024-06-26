@@ -19,11 +19,16 @@ class BaseProject(BaseModel):
     currency_symbol: str
     price_max: Optional[int]
 
-    def to_celery(self, task):
-        task_data = {
-            "id": str(uuid.uuid4()),
-            "task": task,
-            "args": [self.dict()],
-            "kwargs": {},
-        }
-        return json.dumps(task_data)
+
+class BaseVacancy(BaseModel):
+    vacancy_id: int
+    title: str
+    description: Optional[str]
+    offers: int
+    date_published: int
+    salary_from: Optional[int]
+    salary_to: Optional[int]
+    currency_symbol: Optional[str]
+    source: str
+    url: str
+    company: str
