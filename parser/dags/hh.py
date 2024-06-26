@@ -13,7 +13,7 @@ with DAG(
     catchup=False,
 ):
     t1 = PythonOperator(
-        task_id=f"hh",
+        task_id=f"python",
         python_callable=start_crawl,
         op_kwargs={
             "crawler": HHSpider,
@@ -21,7 +21,7 @@ with DAG(
         },
     )
     t2 = PythonOperator(
-        task_id=f"hh",
+        task_id=f"django",
         python_callable=start_crawl,
         op_kwargs={
             "crawler": HHSpider,
