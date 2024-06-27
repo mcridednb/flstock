@@ -81,9 +81,8 @@ class HHSpider(scrapy.Spider):
 
     HEADERS = {
         "Origin": "https://hh.ru",
-        "Accept": "application/json",
+
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        "x-static-version": "24.26.2.5",
         "Referer": "https://hh.ru/",
     }
 
@@ -92,6 +91,15 @@ class HHSpider(scrapy.Spider):
         self.keyword = keyword
 
     def start_requests(self):
+        yield scrapy.Request(
+            url="https://hh.ru/",
+            method="GET",
+            callback=self.start_parsing,
+            headers=self.HEADERS,
+        )
+
+    def start_parsing(self, response):
+        build = response.text.split("build: \"")[1].split("\"", 1)[0]
         query_string = urlencode({
             "text": self.keyword,
             "from": "suggest_post",
@@ -108,7 +116,11 @@ class HHSpider(scrapy.Spider):
             url=url,
             method="GET",
             callback=self.parse_vacancies,
-            headers=self.HEADERS,
+            headers={
+                "Accept": "application/json",
+                **self.HEADERS,
+                "x-static-version": build,
+            },
         )
 
     def parse_vacancies(self, response):
@@ -122,4 +134,4 @@ class HHSpider(scrapy.Spider):
 
 
 if __name__ == "__main__":
-    start_crawl(HHSpider)
+    start_crawl(HHSpider, "python")
