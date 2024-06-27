@@ -54,6 +54,14 @@ CATEGORIES = [{
         "title": "Программирование и IT",
         "code": "script-development",
     }]
+}, {
+    "title": "Дизайн и графика",
+    "code": "programming",
+    "subcategories": [{
+        "id": "590",
+        "title": "Арт, иллюстрации и анимация",
+        "code": "design-art",
+    }]
 }]
 
 SUBCATEGORIES_REVERSE = {
