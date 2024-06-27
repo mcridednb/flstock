@@ -7,6 +7,7 @@ import redis
 import scrapy
 from dotenv import load_dotenv
 from pydantic import Field, field_validator
+from w3lib.http import basic_auth_header
 
 from spiders.models import ExtraMixin
 from spiders.utils import start_crawl
@@ -89,13 +90,24 @@ class HHSpider(scrapy.Spider):
     def __init__(self, keyword, *args, **kwargs):
         super().__init__()
         self.keyword = keyword
+        self.login = "mcridednb"
+        self.password = "NhTtbCPUdF"
+        self.proxy = "http://78.46.100.233:46179"
+        self.proxy_auth = basic_auth_header(self.login, self.password)
 
     def start_requests(self):
         yield scrapy.Request(
             url="https://hh.ru/",
             method="GET",
             callback=self.start_parsing,
-            headers=self.HEADERS,
+            headers={
+                **self.HEADERS,
+                "Proxy-Authorization": self.proxy_auth,
+            },
+            meta={
+                "proxy": self.proxy,
+                "ssl_certificate_validation": False,
+            }
         )
 
     def start_parsing(self, response):
@@ -120,7 +132,12 @@ class HHSpider(scrapy.Spider):
                 "Accept": "application/json",
                 **self.HEADERS,
                 "x-static-version": build,
+                "Proxy-Authorization": self.proxy_auth,
             },
+            meta={
+                "proxy": self.proxy,
+                "ssl_certificate_validation": False,
+            }
         )
 
     def parse_vacancies(self, response):
