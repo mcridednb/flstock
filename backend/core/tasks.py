@@ -122,16 +122,18 @@ def process_vacancy_task(vacancy):
             minutes_ago,
             "Python",
         )
-        response = requests.post(
-            url,
-            data={
-                "chat_id": 763797678,
-                "reply_markup": json.dumps(keyboard),
-            },
-            files={
-                "photo": BytesIO(img_data)
-            }
-        )
+
+        for chat_id in [763797678, 42744407]:
+            response = requests.post(
+                url,
+                data={
+                    "chat_id": chat_id,
+                    "reply_markup": json.dumps(keyboard),
+                },
+                files={
+                    "photo": BytesIO(img_data)
+                }
+            )
 
 
 def check_words(words, title, description):
