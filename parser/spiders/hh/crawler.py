@@ -82,7 +82,6 @@ class HHSpider(scrapy.Spider):
 
     HEADERS = {
         "Origin": "https://hh.ru",
-
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "Referer": "https://hh.ru/",
     }
@@ -90,9 +89,9 @@ class HHSpider(scrapy.Spider):
     def __init__(self, keyword, *args, **kwargs):
         super().__init__()
         self.keyword = keyword
-        self.login = "mcridednb"
-        self.password = "NhTtbCPUdF"
-        self.proxy = "http://78.46.100.233:46179"
+        self.login = "daperepechin"
+        self.password = "WQS3WAZvWc"
+        self.proxy = "http://78.46.100.233:43819"
         self.proxy_auth = basic_auth_header(self.login, self.password)
 
     def start_requests(self):
