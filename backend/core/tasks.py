@@ -350,7 +350,7 @@ def gpt_request(project_id, message_id, delete_message_id, chat_id, request_type
 
     project = Project.objects.get(id=project_id)
     prompt = GPTPrompt.objects.get(
-        model__code="gpt-4o",
+        model__code="gpt-4o-mini",
         type=request_type,
         category=project.category,
     )

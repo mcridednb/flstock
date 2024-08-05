@@ -139,9 +139,9 @@ async def process_gpt(state, callback_data, callback_query, text, user_data):
     }
     await state.set_data(data)
 
-    if not user_data.get("phone"):
-        await process_phone(callback_query.message, state)
-        return
+    # if not user_data.get("phone"):
+    #     await process_phone(callback_query.message, state)
+    #     return
 
     builder = InlineKeyboardBuilder()
     builder.button(
